@@ -75,6 +75,17 @@ same model ID, and wins over the live data: LiteLLM only knows the *current*
 price, but a message sent inside an epoch must keep its historical price
 forever. The table is currently empty — no live model has such a history.
 
+Beyond those hand-made epochs, **every price change is recorded automatically**.
+Each refresh compares the fetched prices with the last known ones; a model whose
+price differs gets a new history entry starting at the moment of the fetch
+(persisted as `pricing_history_json`). A message is always priced with the entry
+that was current when it was sent. So past costs never move when a price
+changes, while the current rates stay current: they are what `/api/pricing`
+shows and what every message from the change onward is billed at. A model seen
+for the first time gets an open-ended entry — there is no evidence of an earlier
+price. Limitation: LiteLLM can lag an official change by a few days; to date it
+exactly, add a manual epoch, which wins over the recorded history.
+
 ---
 
 ## Sessions

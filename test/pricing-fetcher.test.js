@@ -284,6 +284,49 @@ describe('pricing-fetcher', () => {
       expect(cost).toBe(7);
     });
 
+    it('initPricing loads the price history and records a change from the cached fetch', () => {
+      pricing._setPriceHistory({});
+      mockDb.setMetadata('pricing_history_json', JSON.stringify({
+        'claude-opus-5': [{ from: null, input: 5, output: 25, cacheRead: 0.5, cacheCreate: 6.25 }]
+      }));
+      mockDb.setMetadata('pricing_overrides_json', JSON.stringify({
+        'claude-opus-5': { label: 'Opus 5', input: 4, output: 20, cacheRead: 0.4, cacheCreate: 5 }
+      }));
+      mockDb.setMetadata('pricing_fetched_at', '2026-10-01T00:00:00.000Z');
+      try {
+        initPricing(mockDb);
+        const saved = JSON.parse(mockMetadata.pricing_history_json)['claude-opus-5'];
+        expect(saved.map(e => [e.from, e.input])).toEqual([[null, 5], ['2026-10-01T00:00:00.000Z', 4]]);
+        expect(pricing.calculateCost('claude-opus-5', { inputTokens: 1_000_000, timestamp: '2026-09-30T00:00:00Z' })).toBe(5);
+        expect(pricing.calculateCost('claude-opus-5', { inputTokens: 1_000_000, timestamp: '2026-10-02T00:00:00Z' })).toBe(4);
+      } finally {
+        pricing._setPriceHistory({});
+        pricing._setOverrides({}, { source: 'fallback', fetchedAt: null });
+      }
+    });
+
+    it('initPricing seeds the history from cached prices on first boot', () => {
+      pricing._setPriceHistory({});
+      mockDb.setMetadata('pricing_overrides_json', JSON.stringify({
+        'claude-haiku-4-5': { label: 'Haiku 4.5', input: 1, output: 5, cacheRead: 0.1, cacheCreate: 1.25 }
+      }));
+      try {
+        initPricing(mockDb);
+        const saved = JSON.parse(mockMetadata.pricing_history_json);
+        expect(saved['claude-haiku-4-5']).toEqual([{ from: null, input: 1, output: 5, cacheRead: 0.1, cacheCreate: 1.25 }]);
+      } finally {
+        pricing._setPriceHistory({});
+        pricing._setOverrides({}, { source: 'fallback', fetchedAt: null });
+      }
+    });
+
+    it('derives Mythos labels', () => {
+      const o = convertLiteLLMToOverrides({
+        'claude-mythos-5-1': { litellm_provider: 'anthropic', input_cost_per_token: 1e-5, output_cost_per_token: 5e-5 }
+      });
+      expect(o['claude-mythos-5-1'].label).toBe('Mythos 5.1');
+    });
+
     it('initPricing tolerates missing/corrupt cache', () => {
       mockDb.setMetadata('pricing_overrides_json', 'not json {{{');
       expect(() => initPricing(mockDb)).not.toThrow();

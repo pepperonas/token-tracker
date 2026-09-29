@@ -53,8 +53,8 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/parser.js` | JSONL → message objects. Byte offsets per file for incremental reads; dedup by `message.id` (streaming writes the same ID repeatedly); extracts tools, line counts, the cache-write TTL split and rate-limit events. |
 | `lib/db.js` | Schema, migrations, all SQL. Streaming generators for whole-DB scans. |
 | `lib/aggregator.js` | Every analytics answer. Pre-computed maps plus per-message cached derived values. |
-| `lib/pricing.js` | Price resolution: epoch → LiteLLM override → built-in fallback → default. Cost calculation including both cache-write tiers. |
-| `lib/pricing-fetcher.js` | Daily LiteLLM refresh, cached in the DB so the first calculation after a restart is already fresh. |
+| `lib/pricing.js` | Price resolution: epoch → recorded price history (by message time) → LiteLLM override → built-in fallback → default. Cost calculation including both cache-write tiers. |
+| `lib/pricing-fetcher.js` | Daily LiteLLM refresh, cached in the DB so the first calculation after a restart is already fresh; records every price change in the price history so past costs stay fixed. |
 | `lib/achievements.js` | 1,200 definitions, the stats they read, and the historical backfill. |
 | `lib/auth.js` | GitHub OAuth, sessions, API-key authentication. |
 | `lib/github.js`, `lib/anthropic-api.js`, `lib/plan-usage.js` | External integrations, all cached. |

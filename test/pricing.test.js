@@ -1,4 +1,4 @@
-const { calculateCost, getModelLabel, getPricing, getPricingMeta, cacheCreate1hPrice, PRICING, DEFAULT_PRICING, _setOverrides, _setEpochs } = require('../lib/pricing');
+const { calculateCost, getModelLabel, getPricing, getPricingMeta, cacheCreate1hPrice, PRICING, DEFAULT_PRICING, _setOverrides, _setEpochs, _setPriceHistory, recordPrices, getPriceHistory } = require('../lib/pricing');
 
 describe('pricing', () => {
   describe('calculateCost', () => {
@@ -298,9 +298,104 @@ describe('pricing', () => {
     });
   });
 
+  describe('automatic price history', () => {
+    const M = 'claude-opus-5';
+    const OLD = { label: 'Opus 5', input: 5, output: 25, cacheRead: 0.5, cacheCreate: 6.25 };
+    const NEW = { label: 'Opus 5', input: 4, output: 20, cacheRead: 0.4, cacheCreate: 5 };
+    const CHANGE = '2026-10-01T12:00:00.000Z';
+
+    beforeEach(() => { _setPriceHistory({}); });
+    afterEach(() => {
+      _setPriceHistory({});
+      _setOverrides({}, { source: 'fallback', fetchedAt: null });
+    });
+
+    it('a first sighting is open-ended, not a change', () => {
+      expect(recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z')).toEqual([]);
+      expect(getPriceHistory()[M]).toEqual([{ from: null, input: 5, output: 25, cacheRead: 0.5, cacheCreate: 6.25 }]);
+    });
+
+    it('an unchanged price adds no entry', () => {
+      recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z');
+      expect(recordPrices({ [M]: { ...OLD } }, CHANGE)).toEqual([]);
+      expect(getPriceHistory()[M]).toHaveLength(1);
+    });
+
+    it('a price change keeps past costs and applies the new price from the change on', () => {
+      recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z');
+      _setOverrides({ [M]: OLD }, { source: 'litellm', fetchedAt: '2026-09-01T00:00:00Z' });
+      const usage = { inputTokens: 1_000_000, outputTokens: 1_000_000, timestamp: '2026-09-15T10:00:00Z' };
+      const before = calculateCost(M, usage);
+
+      expect(recordPrices({ [M]: NEW }, CHANGE)).toEqual([M]);
+      _setOverrides({ [M]: NEW }, { source: 'litellm', fetchedAt: CHANGE });
+
+      expect(calculateCost(M, usage)).toBe(before);                       // old message: unchanged
+      expect(before).toBe(30);
+      expect(calculateCost(M, { ...usage, timestamp: '2026-10-01T11:59:59Z' })).toBe(30);
+      expect(calculateCost(M, { ...usage, timestamp: '2026-10-01T12:00:00Z' })).toBe(24); // from the change on
+      expect(calculateCost(M, { inputTokens: 1_000_000, outputTokens: 1_000_000 })).toBe(24); // current rate
+      expect(getPricing(M).input).toBe(4);
+    });
+
+    it('a change back is recorded too, and each period keeps its own price', () => {
+      recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z');
+      recordPrices({ [M]: NEW }, CHANGE);
+      expect(recordPrices({ [M]: OLD }, '2026-11-01T00:00:00Z')).toEqual([M]);
+      const at = ts => calculateCost(M, { inputTokens: 1_000_000, timestamp: ts });
+      expect([at('2026-09-20T00:00:00Z'), at('2026-10-20T00:00:00Z'), at('2026-11-20T00:00:00Z')]).toEqual([5, 4, 5]);
+    });
+
+    it('a model missing from a fetch keeps its history', () => {
+      recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z');
+      recordPrices({}, CHANGE);
+      expect(getPriceHistory()[M]).toHaveLength(1);
+    });
+
+    it('rejects implausible prices instead of recording them as a change', () => {
+      recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z');
+      expect(recordPrices({ [M]: { ...OLD, input: 0 } }, CHANGE)).toEqual([]);
+      expect(recordPrices({ [M]: { ...OLD, output: NaN } }, CHANGE)).toEqual([]);
+      expect(getPriceHistory()[M]).toHaveLength(1);
+    });
+
+    it('manual epochs still win over the recorded history', () => {
+      recordPrices({ [M]: OLD }, '2026-09-01T00:00:00Z');
+      _setEpochs({ [M]: [{ from: null, to: '2026-12-31', label: 'Opus 5', input: 1, output: 1, cacheRead: 0.1, cacheCreate: 1.25 }] });
+      try {
+        expect(calculateCost(M, { inputTokens: 1_000_000, timestamp: '2026-09-15T00:00:00Z' })).toBe(1);
+      } finally { _setEpochs({}); }
+    });
+
+    it('exposes only real changes in the pricing meta', () => {
+      recordPrices({ [M]: OLD, 'claude-haiku-4-5': { input: 1, output: 5, cacheRead: 0.1, cacheCreate: 1.25 } }, '2026-09-01T00:00:00Z');
+      recordPrices({ [M]: NEW }, CHANGE);
+      expect(Object.keys(getPricingMeta().priceChanges)).toEqual([M]);
+    });
+  });
+
   describe('PRICING table', () => {
     it('has at least 4 models', () => {
       expect(Object.keys(PRICING).length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('fallback matches the official price list (verified 2026-09-29)', () => {
+      // Without these an offline boot priced e.g. Opus 5.5 as Sonnet ($3/$15).
+      const want = {
+        'claude-opus-5-5': [4, 20, 0.20, 5],
+        'claude-sonnet-5-5': [2, 10, 0.20, 2.5],
+        'claude-fable-5-1': [10, 50, 0.25, 12.5],
+        'claude-mythos-5-1': [10, 50, 0.25, 12.5],
+        'claude-fable-5': [10, 50, 1, 12.5],
+        'claude-mythos-5': [10, 50, 1, 12.5],
+        'claude-opus-5': [5, 25, 0.5, 6.25],
+        'claude-sonnet-5': [2, 10, 0.2, 2.5],
+        'claude-haiku-4-5': [1, 5, 0.1, 1.25]
+      };
+      for (const [id, [i, o, r, c]] of Object.entries(want)) {
+        const p = PRICING[id];
+        expect([id, p.input, p.output, p.cacheRead, p.cacheCreate]).toEqual([id, i, o, r, c]);
+      }
     });
 
     it('covers the current generation offline (Opus 4.8, Sonnet 5, Fable 5)', () => {

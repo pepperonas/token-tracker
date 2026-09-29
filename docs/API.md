@@ -78,7 +78,7 @@ endpoint's allowlist.
 
 | Route | Description |
 |---|---|
-| `/api/pricing` | **Public.** Effective prices per model with `origin: 'litellm' \| 'fallback'`, the 1-hour cache-write price, epochs, and the last fetch error if any. |
+| `/api/pricing` | **Public.** Effective prices per model with `origin: 'litellm' \| 'fallback'`, the 1-hour cache-write price, epochs, recorded price changes (`priceChanges`), and the last fetch error if any. |
 | `POST /api/pricing/refresh` | Force a LiteLLM refresh. |
 
 ## Projects: merge

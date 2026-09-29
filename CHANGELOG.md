@@ -4,6 +4,33 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.4.1] — 2026-09-29
+
+### Fixed
+
+- **Preisänderungen verändern keine alten Kosten mehr.** Kosten werden bei jedem
+  Start aus den gespeicherten Tokens neu berechnet — mit dem Preis, der gerade
+  gilt. Hätte sich ein Preis unter derselben Modell-ID geändert, wären damit
+  rückwirkend alle alten Nachrichten umbewertet worden. Jetzt wird jede
+  Preisänderung automatisch mit Zeitpunkt protokolliert
+  (`pricing_history_json`), und jede Nachricht behält den Preis, der beim
+  Senden galt. Die aktuellen Sätze bleiben die aktuellen: `/api/pricing` zeigt
+  sie, und alles ab der Änderung wird damit berechnet
+- **Offline-Preistabelle kannte die neuen Modelle nicht** — Opus 5.5, Sonnet 5.5,
+  Fable 5.1, Mythos 5 und 5.1 fehlten und wären ohne LiteLLM zum Sonnet-4.6-Preis
+  ($3/$15) gerechnet worden; bei Opus 5.5 (16,8 k Nachrichten seit 24.09.) also
+  zu billig, bei Fable 5.1 viel zu billig. Alle Werte gegen die offizielle
+  Preisliste geprüft, auch die abweichenden Cache-Read-Sätze (Opus 5.5 0,05×,
+  Fable/Mythos 5.1 0,025× Input)
+- Mythos-Modelle bekommen ein lesbares Label statt der rohen ID
+
+### Geprüft
+
+- Alle live verwendeten Preise (LiteLLM, Stand 28.09.) stimmen mit der
+  offiziellen Anthropic-Preisliste überein. Unter keiner verwendeten Modell-ID
+  hat sich der Preis je geändert — die bisher berechneten Kosten sind korrekt
+  und bleiben unverändert
+
 ## [0.4.0] — 2026-09-26
 
 ### Added
