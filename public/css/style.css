@@ -111,36 +111,6 @@ body {
   gap: 16px;
 }
 
-/* Header Action Buttons (Info & Settings) */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.header-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  padding: 0;
-}
-.header-icon-btn:hover {
-  color: var(--text);
-  background: var(--surface2);
-  border-color: var(--blue, #3b82f6);
-}
-.header-icon-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
 
 .live-dot {
   width: 8px;

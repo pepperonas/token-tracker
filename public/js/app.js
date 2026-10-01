@@ -570,11 +570,6 @@ function updateTabGroupUi(activeTab) {
       }
     }
   }
-
-  const infoBtn = document.getElementById('btn-tab-info');
-  const settingsBtn = document.getElementById('btn-tab-settings');
-  if (infoBtn) infoBtn.classList.toggle('active', activeTab === 'info');
-  if (settingsBtn) settingsBtn.classList.toggle('active', activeTab === 'settings');
 }
 
 function positionTabGroupMenu(group) {
@@ -588,12 +583,26 @@ function positionTabGroupMenu(group) {
 }
 
 function initTabGroups() {
-  document.querySelectorAll('.tab-group-btn').forEach(btn => {
+  document.querySelectorAll('.tab-group').forEach(group => {
+    const btn = group.querySelector('.tab-group-btn');
+    if (!btn) return;
+
+    // Hover support: open when hovering, close on leave
+    group.addEventListener('mouseenter', () => {
+      positionTabGroupMenu(group);
+      group.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+    });
+
+    group.addEventListener('mouseleave', () => {
+      group.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+
+    // Click / touch toggle
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
-      const group = btn.closest('.tab-group');
-      if (!group) return;
       const wasOpen = group.classList.contains('open');
       document.querySelectorAll('.tab-group').forEach(g => {
         g.classList.remove('open');
