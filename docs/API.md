@@ -40,6 +40,7 @@ endpoint's allowlist.
 | Route | Description |
 |---|---|
 | `/api/overview` | KPI totals: tokens by type, cost, sessions, messages, lines, `totalActiveMin`, `avgActiveMinPerDay`, `activeDays`, rate-limit hits. |
+| `/api/providers` | Aggregated tokens, cost, messages, sessions, projects, and models broken down by provider (`claude`, `codex`, `antigravity`). |
 | `/api/daily` | Per-day aggregates including a four-part cost breakdown (`inputCost`, `outputCost`, `cacheReadCost`, `cacheCreateCost`). |
 | `/api/daily-by-model` | Daily tokens split by model. |
 | `/api/daily-cost-breakdown` | Daily cost split by token type. |

@@ -215,4 +215,31 @@ describe('frontend helpers', () => {
       expect(suspects).toEqual([]);
     });
   });
+
+  describe('provider helpers', () => {
+    it('returns proper labels for providers', () => {
+      expect(F.getProviderLabel('claude')).toBe('Claude Code');
+      expect(F.getProviderLabel('codex')).toBe('Codex');
+      expect(F.getProviderLabel('antigravity')).toBe('Antigravity');
+      expect(F.getProviderLabel()).toBe('Claude Code');
+    });
+
+    it('creates provider badges with expected css classes', () => {
+      const b1 = F.createProviderBadge('claude');
+      expect(b1.className).toBe('badge-provider badge-provider-claude');
+      expect(b1.textContent).toBe('Claude Code');
+
+      const b2 = F.createProviderBadge('codex');
+      expect(b2.className).toBe('badge-provider badge-provider-codex');
+      expect(b2.textContent).toBe('Codex');
+
+      const b3 = F.createProviderBadge('antigravity');
+      expect(b3.className).toBe('badge-provider badge-provider-antigravity');
+      expect(b3.textContent).toBe('Antigravity');
+    });
+
+    it('includes provider in state with default all', () => {
+      expect(G.state.provider).toBeDefined();
+    });
+  });
 });

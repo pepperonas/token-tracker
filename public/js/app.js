@@ -13,7 +13,8 @@ let state = {
   devices: [],
   periodB: localStorage.getItem('periodB') || 'off',
   periodBFrom: localStorage.getItem('periodBFrom') || '',
-  periodBTo: localStorage.getItem('periodBTo') || ''
+  periodBTo: localStorage.getItem('periodBTo') || '',
+  provider: localStorage.getItem('provider') || 'all'
 };
 
 // --- Cache toggle helpers ---
@@ -91,7 +92,35 @@ function periodQuery() {
   if (from) params.push('from=' + from);
   if (to) params.push('to=' + to);
   if (state.device) params.push('device=' + state.device);
+  if (state.provider && state.provider !== 'all') params.push('provider=' + encodeURIComponent(state.provider));
   return params.length ? '?' + params.join('&') : '';
+}
+
+function getProviderLabel(provider) {
+  const p = (provider || 'claude').toLowerCase();
+  if (p === 'codex') return 'Codex';
+  if (p === 'antigravity') return 'Antigravity';
+  return 'Claude Code';
+}
+
+function createProviderBadge(provider) {
+  const p = (provider || 'claude').toLowerCase();
+  const span = document.createElement('span');
+  span.className = `badge-provider badge-provider-${p}`;
+  span.textContent = getProviderLabel(p);
+  return span;
+}
+
+function setProvider(provider) {
+  state.provider = provider || 'all';
+  if (state.provider && state.provider !== 'all') {
+    localStorage.setItem('provider', state.provider);
+  } else {
+    localStorage.removeItem('provider');
+  }
+  const ps = document.getElementById('provider-select');
+  if (ps) ps.value = state.provider;
+  loadTab(state.activeTab);
 }
 
 function isSingleDay() {
@@ -856,7 +885,8 @@ async function loadActiveSessions() {
 
       const project = document.createElement('div');
       project.className = 'active-session-project';
-      project.textContent = s.project;
+      project.textContent = s.project + ' ';
+      project.appendChild(createProviderBadge(s.provider || 'claude'));
 
       const meta = document.createElement('div');
       meta.className = 'active-session-meta';
@@ -1137,6 +1167,93 @@ async function loadTrends() {
   } catch (e) { /* section stays hidden */ }
 }
 
+function renderProviderBreakdown(providers, totalTokens, totalCost) {
+  const section = document.getElementById('provider-breakdown-section');
+  const grid = document.getElementById('provider-cards-grid');
+  if (!section || !grid) return;
+
+  if (!providers || Object.keys(providers).length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  const providerList = ['claude', 'codex', 'antigravity'];
+  const hasData = providerList.some(p => providers[p] && (providers[p].tokens > 0 || providers[p].messages > 0));
+  if (!hasData) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = '';
+  grid.textContent = '';
+
+  const costMode = state.metricMode === 'cost';
+
+  for (const p of providerList) {
+    const data = providers[p] || { tokens: 0, cost: 0, messages: 0, sessionsCount: 0 };
+    const card = document.createElement('div');
+    card.className = 'provider-card' + (state.provider === p ? ' active' : '');
+    card.title = `Klicken, um nach ${getProviderLabel(p)} zu filtern`;
+
+    const pct = costMode
+      ? (totalCost > 0 ? Math.round((data.cost / totalCost) * 100) : 0)
+      : (totalTokens > 0 ? Math.round((data.tokens / totalTokens) * 100) : 0);
+
+    const header = document.createElement('div');
+    header.className = 'provider-card-header';
+
+    const title = document.createElement('div');
+    title.className = 'provider-card-title';
+    title.appendChild(createProviderBadge(p));
+
+    const pctSpan = document.createElement('span');
+    pctSpan.className = 'provider-card-pct';
+    pctSpan.textContent = pct + '%';
+
+    header.appendChild(title);
+    header.appendChild(pctSpan);
+
+    const stats = document.createElement('div');
+    stats.className = 'provider-card-stats';
+
+    const statTokens = document.createElement('div');
+    const lblTokens = document.createElement('div');
+    lblTokens.className = 'provider-card-stat-label';
+    lblTokens.textContent = costMode ? t('cost') : t('tokens');
+    const valTokens = document.createElement('div');
+    valTokens.className = 'provider-card-stat-value';
+    valTokens.textContent = costMode ? formatCost(data.cost) : formatTokens(data.tokens);
+    statTokens.appendChild(lblTokens);
+    statTokens.appendChild(valTokens);
+
+    const statSessions = document.createElement('div');
+    const lblSessions = document.createElement('div');
+    lblSessions.className = 'provider-card-stat-label';
+    lblSessions.textContent = t('sessionsLabel');
+    const valSessions = document.createElement('div');
+    valSessions.className = 'provider-card-stat-value';
+    valSessions.textContent = formatNumber(data.sessionsCount || 0);
+    statSessions.appendChild(lblSessions);
+    statSessions.appendChild(valSessions);
+
+    stats.appendChild(statTokens);
+    stats.appendChild(statSessions);
+
+    card.appendChild(header);
+    card.appendChild(stats);
+
+    card.addEventListener('click', () => {
+      if (state.provider === p) {
+        setProvider('all');
+      } else {
+        setProvider(p);
+      }
+    });
+
+    grid.appendChild(card);
+  }
+}
+
 async function loadOverview() {
   const [overview, daily, models, hourly, hourlyWeekday, statsCache] = await Promise.all([
     api('overview' + periodQuery()),
@@ -1197,6 +1314,9 @@ async function loadOverview() {
   document.getElementById('kpi-lines-deleted-sub').textContent = `~${formatNumber(Math.round(lR / dayCount))} ${t('linesPerDay')}`;
   document.getElementById('kpi-lines-net').textContent = (netLines >= 0 ? '+' : '') + formatNumber(netLines);
   document.getElementById('kpi-lines-net-sub').textContent = t('netChangeDesc');
+
+  // Provider Breakdown
+  renderProviderBreakdown(overview.providers, displayTokens, displayCost);
 
   // Stats-cache banner (official Claude totals — single-user only)
   const banner = document.getElementById('stats-banner');
@@ -1289,6 +1409,7 @@ async function loadSessions() {
     sessionThead.textContent = '';
     const sHeaders = [
       { text: t('date') },
+      { text: t('provider') || 'Provider' },
       { text: t('project') },
       { text: t('model') },
       { text: t('duration'), cls: 'num' },
@@ -1309,6 +1430,7 @@ async function loadSessions() {
 
   storeTableData('sessions-tbody', filtered, [
     { value: s => s.firstTs ? s.firstTs.slice(0, 16).replace('T', ' ') : '-' },
+    { value: s => s.provider || 'claude', render: (td, s) => { td.appendChild(createProviderBadge(s.provider || 'claude')); } },
     { value: s => s.project },
     { value: s => s.models.join(', ') },
     { value: s => s.durationMin + 'm', className: 'num' },
@@ -2199,6 +2321,7 @@ async function loadModels() {
   const tbody = document.getElementById('models-tbody');
   const cellDefs = [
     { value: m => m.label },
+    { value: m => m.provider || 'claude', render: (td, m) => { td.appendChild(createProviderBadge(m.provider || 'claude')); } },
     { value: m => formatTokens(m.inputTokens), className: 'num' },
     { value: m => formatTokens(m.outputTokens), className: 'num' },
     { value: m => formatTokens(m.cacheReadTokens), className: 'num' },
@@ -2215,6 +2338,7 @@ async function loadModels() {
     thead.textContent = '';
     const headers = [
       { text: t('model') },
+      { text: t('provider') || 'Provider' },
       { text: t('input'), cls: 'num' },
       { text: t('output'), cls: 'num' },
       { text: t('cacheRead'), cls: 'num' },
@@ -4192,6 +4316,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       localStorage.setItem('device', state.device);
     } else {
       localStorage.removeItem('device');
+    }
+    loadTab(state.activeTab);
+  });
+
+  // Provider filter
+  document.getElementById('provider-select')?.addEventListener('change', (e) => {
+    state.provider = e.target.value;
+    if (state.provider && state.provider !== 'all') {
+      localStorage.setItem('provider', state.provider);
+    } else {
+      localStorage.removeItem('provider');
     }
     loadTab(state.activeTab);
   });

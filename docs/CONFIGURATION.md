@@ -18,6 +18,8 @@ plist's `EnvironmentVariables` block instead.
 |---|---|---|
 | `PORT` | `5010` | HTTP port. |
 | `CLAUDE_DIR` | `~/.claude` | Root of the Claude Code installation. `PROJECTS_DIR` is derived as `$CLAUDE_DIR/projects`. |
+| `CODEX_DIR` | `~/.codex` | Root of the OpenAI Codex installation. `CODEX_SESSIONS_DIR` is derived as `$CODEX_DIR/sessions`. |
+| `ANTIGRAVITY_DIR` | `~/.gemini/antigravity-cli` | Root of the Google Antigravity installation. |
 | `DATA_DIR` | `./data` | Where the tracker keeps its own files. |
 | `DB_PATH` | `$DATA_DIR/tracker.db` | SQLite database. Set it explicitly to move the DB off the project directory. |
 

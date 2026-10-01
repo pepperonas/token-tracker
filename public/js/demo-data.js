@@ -45,7 +45,12 @@ const DEMO_DATA = (() => {
     totalActiveMin: 863,
     avgActiveMinPerDay: 72,
     activeDays: 12,
-    rateLimitHits: 4
+    rateLimitHits: 4,
+    providers: {
+      claude: { provider: 'claude', tokens: 4994380, cost: 16.50, messages: 620, sessionsCount: 30 },
+      codex: { provider: 'codex', tokens: 1200000, cost: 4.20, messages: 140, sessionsCount: 8 },
+      antigravity: { provider: 'antigravity', tokens: 800000, cost: 2.01, messages: 87, sessionsCount: 4 }
+    }
   };
 
   // --- Daily data ---

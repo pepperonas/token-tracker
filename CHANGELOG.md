@@ -4,6 +4,20 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.5.0] — 2026-10-01
+
+### Added
+
+- **Multi-Provider-Unterstützung für OpenAI Codex und Google Antigravity**:
+  - Automatisches Parsen und Verfolgen von OpenAI Codex Sitzungen aus `~/.codex/sessions/**/rollout-*.jsonl`.
+  - Zero-Dependency Protobuf-Parser für Google Antigravity SQLite-Datenbanken (`~/.gemini/antigravity-cli/conversations/*.db`).
+  - Preistabellen und Modell-Labels für OpenAI-Modelle (`gpt-6-astra`, `gpt-6-luna`, `gpt-5.6-*`, `o1`, `o3`, etc.) und Google-Gemini-Modelle (`gemini-3.8-flash*`, `gemini-2.5-*`, etc.).
+  - File-Watcher überwacht parallel Codex- und Antigravity-Verzeichnisse.
+  - Globaler Provider-Filter (`#provider-select`) in der Kopfzeile (`Alle Provider`, `Claude Code`, `Codex`, `Antigravity`).
+  - Provider-Breakdown-Karten in der Übersicht mit Token-, Kosten- und Sitzungsanteilen.
+  - Farbige Provider-Badges in Sitzungs- und Modelltabellen.
+  - Neuer API-Endpoint `GET /api/providers` sowie `provider`-Filterung in allen wesentlichen Endpoints (`/api/overview`, `/api/sessions`, `/api/models`, `/api/projects`, `/api/daily`, `/api/hourly`).
+
 ## [0.4.1] — 2026-09-29
 
 ### Fixed

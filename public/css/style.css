@@ -161,6 +161,24 @@ body {
   border-color: var(--blue);
 }
 
+/* Provider Filter */
+.provider-filter {
+  margin-left: 8px;
+}
+.provider-filter select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.provider-filter select:focus {
+  border-color: var(--blue);
+}
+
 /* Device Management (Settings) */
 .device-list-item {
   display: flex;
@@ -942,6 +960,101 @@ html.js .uheat-anim .uheat-legend {
   background: color-mix(in srgb, var(--primary, #b3c5ff) 16%, transparent);
   vertical-align: middle;
   cursor: help;
+}
+
+/* Provider Badges */
+.badge-provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.badge-provider-claude {
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.12);
+  border: 1px solid rgba(234, 88, 12, 0.28);
+}
+.badge-provider-codex {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+.badge-provider-antigravity {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+/* Provider Breakdown in Overview */
+.provider-breakdown-section {
+  margin: 20px 0;
+}
+.provider-breakdown-section .section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.provider-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+.provider-card {
+  background: var(--bg-card, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.provider-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue, #3b82f6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.provider-card.active {
+  border-color: var(--blue, #3b82f6);
+  box-shadow: 0 0 0 1px var(--blue, #3b82f6);
+}
+.provider-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.provider-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.provider-card-pct {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.provider-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.provider-card-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.provider-card-stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
 }
 
 /* Merge dialog */

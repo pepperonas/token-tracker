@@ -5,6 +5,8 @@ const url = require('url');
 
 const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY, OWNER_GITHUB_ID } = require('./lib/config');
 const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
+const { parseAllCodex } = require('./lib/codex-parser');
+const { parseAllAntigravity } = require('./lib/antigravity-parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
 const { calculateCost, getPricingMeta } = require('./lib/pricing');
@@ -105,20 +107,28 @@ if (!MULTI_USER) {
     console.log(`Loaded ${existingRateLimitEvents.length} rate-limit events from database`);
   }
 
-  // Parse new JSONL data incrementally
+  // Parse new JSONL and multi-provider data incrementally
   const t0 = Date.now();
   const savedParseState = getParseState();
   const { messages: newMessages, rateLimitEvents: newRateLimitEvents, parseState: newParseState } = parseAll(savedParseState);
   parseState = newParseState;
 
-  if (newMessages.length > 0) {
+  const { messages: codexMessages, parseState: codexParseState } = parseAllCodex(savedParseState);
+  Object.assign(parseState, codexParseState);
+
+  const { messages: agyMessages, parseState: agyParseState } = parseAllAntigravity(savedParseState);
+  Object.assign(parseState, agyParseState);
+
+  const allIncoming = [...newMessages, ...codexMessages, ...agyMessages];
+
+  if (allIncoming.length > 0) {
     // The aggregator already contains every DB message at this point, so its
     // ID map doubles as the dedup set (no extra 150k-entry Set needed).
-    const trulyNew = newMessages.filter(m => !aggregator.hasMessage(m.id));
+    const trulyNew = allIncoming.filter(m => !aggregator.hasMessage(m.id));
     if (trulyNew.length > 0) {
       insertMessages(trulyNew, calculateCost);
       aggregator.addMessages(trulyNew);
-      console.log(`Parsed ${trulyNew.length} new messages in ${Date.now() - t0}ms`);
+      console.log(`Parsed ${trulyNew.length} new messages across providers in ${Date.now() - t0}ms`);
     }
   }
 
@@ -1115,7 +1125,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/overview') {
-    return sendJSON(res, agg.getOverview(query.from, query.to));
+    return sendJSON(res, agg.getOverview(query.from, query.to, query.provider));
   }
 
   if (pathname === '/api/rate-limits') {
@@ -1123,15 +1133,19 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/daily') {
-    return sendJSON(res, agg.getDaily(query.from, query.to));
+    return sendJSON(res, agg.getDaily(query.from, query.to, query.provider));
   }
 
   if (pathname === '/api/daily-by-model') {
     return sendJSON(res, agg.getDailyByModel(query.from, query.to));
   }
 
+  if (pathname === '/api/providers') {
+    return sendJSON(res, agg.getProviders(query.from, query.to));
+  }
+
   if (pathname === '/api/sessions') {
-    return sendJSON(res, agg.getSessions(query.project, query.model, query.from, query.to));
+    return sendJSON(res, agg.getSessions(query.project, query.model, query.from, query.to, query.provider));
   }
 
   if (pathname.startsWith('/api/session/')) {
@@ -1177,11 +1191,11 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/projects') {
-    return sendJSON(res, agg.getProjects(query.from, query.to));
+    return sendJSON(res, agg.getProjects(query.from, query.to, query.provider));
   }
 
   if (pathname === '/api/models') {
-    return sendJSON(res, agg.getModels(query.from, query.to));
+    return sendJSON(res, agg.getModels(query.from, query.to, query.provider));
   }
 
   if (pathname === '/api/tools') {
@@ -1205,7 +1219,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/hourly') {
-    return sendJSON(res, agg.getHourly(query.from, query.to));
+    return sendJSON(res, agg.getHourly(query.from, query.to, query.provider));
   }
 
   if (pathname === '/api/hourly-by-model') {

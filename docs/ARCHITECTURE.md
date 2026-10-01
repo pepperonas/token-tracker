@@ -50,7 +50,9 @@ issues the session cookie; each machine gets its own device API key.
 
 | Module | Responsibility |
 |---|---|
-| `lib/parser.js` | JSONL → message objects. Byte offsets per file for incremental reads; dedup by `message.id` (streaming writes the same ID repeatedly); extracts tools, line counts, the cache-write TTL split and rate-limit events. |
+| `lib/parser.js` | JSONL → message objects for Claude Code. Byte offsets per file for incremental reads; dedup by `message.id` (streaming writes the same ID repeatedly); extracts tools, line counts, the cache-write TTL split and rate-limit events. |
+| `lib/codex-parser.js` | OpenAI Codex rollout JSONL parser. Incremental reads, project directory extraction, and `token_usage_record` parsing with cached token separation. |
+| `lib/antigravity-parser.js` | Google Antigravity SQLite conversation parser. Pure-JS protobuf decoder for `gen_metadata` and `steps`, step timestamps, and `conversation_summaries.db` project resolution. |
 | `lib/db.js` | Schema, migrations, all SQL. Streaming generators for whole-DB scans. |
 | `lib/aggregator.js` | Every analytics answer. Pre-computed maps plus per-message cached derived values. |
 | `lib/pricing.js` | Price resolution: epoch → recorded price history (by message time) → LiteLLM override → built-in fallback → default. Cost calculation including both cache-write tiers. |

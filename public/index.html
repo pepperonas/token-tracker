@@ -222,10 +222,21 @@
         <div class="device-switcher" id="device-switcher" style="display:none;">
           <select id="device-select"></select>
         </div>
+        <div class="provider-filter" id="provider-filter">
+          <select id="provider-select" title="Provider auswählen">
+            <option value="all" data-i18n="allProviders">Alle Provider</option>
+            <option value="claude">Claude Code</option>
+            <option value="codex">Codex</option>
+            <option value="antigravity">Antigravity</option>
+          </select>
+        </div>
         <script>
         (function() {
           var cd = localStorage.getItem('customDate');
           var p = localStorage.getItem('period') || '30d';
+          var prov = localStorage.getItem('provider') || 'all';
+          var ps = document.getElementById('provider-select');
+          if (ps) ps.value = prov;
           if (cd) {
             document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
             document.getElementById('custom-date-picker').value = cd;
@@ -450,6 +461,12 @@
         </div>
       </div>
 
+      <!-- Provider Breakdown -->
+      <div class="provider-breakdown-section" id="provider-breakdown-section" style="display:none;">
+        <h3 class="section-title" data-i18n="providersTitle">Nutzung nach Provider</h3>
+        <div class="provider-cards-grid" id="provider-cards-grid"></div>
+      </div>
+
       <!-- Usage trends: now-anchored comparisons, independent of the period filter -->
       <div class="trend-section" id="trend-section" style="display:none;">
         <div class="trend-header">
@@ -642,6 +659,7 @@
           <thead>
             <tr>
               <th data-i18n="date">Datum</th>
+              <th data-i18n="provider">Provider</th>
               <th data-i18n="project">Projekt</th>
               <th data-i18n="model">Modell</th>
               <th class="num" data-i18n="duration">Dauer</th>
@@ -780,6 +798,7 @@
           <thead>
             <tr>
               <th data-i18n="model">Modell</th>
+              <th data-i18n="provider">Provider</th>
               <th class="num" data-i18n="input">Input</th>
               <th class="num" data-i18n="output">Output</th>
               <th class="num" data-i18n="cacheRead">Cache Read</th>
