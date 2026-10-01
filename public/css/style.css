@@ -1740,6 +1740,8 @@ html.js .uheat-anim .uheat-legend {
 /* Info Tab */
 .info-container {
   max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .info-container h2 {
