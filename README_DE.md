@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.5.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.5.0">
-  <img src="https://img.shields.io/badge/lines_of_code-40.7k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="40721 lines of code across 70 files">
+  <img src="https://img.shields.io/badge/lines_of_code-41.6k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="41638 lines of code across 75 files">
 </p>
 
 <p align="center">

@@ -1,6 +1,6 @@
 # API reference
 
-64 routes. Unless stated otherwise a route is `GET`, returns JSON, and accepts
+71 routes. Unless stated otherwise a route is `GET`, returns JSON, and accepts
 the period parameters below.
 
 ## Authentication
