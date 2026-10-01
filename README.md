@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.5.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.5.0">
-  <img src="https://img.shields.io/badge/lines_of_code-42.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42130 lines of code across 75 files">
+  <img src="https://img.shields.io/badge/lines_of_code-42.3k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42302 lines of code across 75 files">
 </p>
 
 <p align="center">
@@ -52,7 +52,7 @@
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-5886_x_2-bf8700?style=flat-square" alt="5886 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-5890_x_2-bf8700?style=flat-square" alt="5890 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 

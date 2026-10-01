@@ -120,6 +120,9 @@ function setProvider(provider) {
   }
   const ps = document.getElementById('provider-select');
   if (ps) ps.value = state.provider;
+  document.querySelectorAll('.provider-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.provider === state.provider);
+  });
   loadTab(state.activeTab);
 }
 
@@ -1167,7 +1170,7 @@ async function loadTrends() {
   } catch (e) { /* section stays hidden */ }
 }
 
-function renderProviderBreakdown(providers, totalTokens, totalCost) {
+function renderProviderBreakdown(providers, totalTokens, totalCost, overview) {
   const section = document.getElementById('provider-breakdown-section');
   const grid = document.getElementById('provider-cards-grid');
   if (!section || !grid) return;
@@ -1189,10 +1192,69 @@ function renderProviderBreakdown(providers, totalTokens, totalCost) {
 
   const costMode = state.metricMode === 'cost';
 
+  // If a specific provider is filtered, show an informative filter status banner with instant reset
+  if (state.provider && state.provider !== 'all') {
+    const p = state.provider;
+    const banner = document.createElement('div');
+    banner.className = 'provider-filter-banner';
+
+    const info = document.createElement('div');
+    info.className = 'provider-filter-banner-info';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'provider-filter-banner-label';
+    lbl.textContent = t('activeProviderFilter');
+
+    info.appendChild(lbl);
+    info.appendChild(createProviderBadge(p));
+
+    const statsSpan = document.createElement('span');
+    statsSpan.className = 'provider-filter-banner-stats';
+    const sessCount = overview && overview.sessions !== undefined ? overview.sessions : 0;
+    statsSpan.textContent = `· ${costMode ? formatCost(totalCost) : formatTokens(totalTokens)} · ${formatNumber(sessCount)} ${t('sessionsLabel')}`;
+    info.appendChild(statsSpan);
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'provider-filter-reset-btn';
+    resetBtn.innerHTML = '✕ ' + t('showAllProviders');
+    resetBtn.addEventListener('click', () => {
+      setProvider('all');
+    });
+
+    banner.appendChild(info);
+    banner.appendChild(resetBtn);
+    grid.appendChild(banner);
+    return;
+  }
+
+  // Distribution / Share Bar across all providers
+  const basis = costMode ? totalCost : totalTokens;
+  if (basis > 0) {
+    const shareBarContainer = document.createElement('div');
+    shareBarContainer.className = 'provider-share-bar-container';
+    const shareBar = document.createElement('div');
+    shareBar.className = 'provider-share-bar';
+
+    for (const p of providerList) {
+      const data = providers[p] || { tokens: 0, cost: 0 };
+      const val = costMode ? (data.cost || 0) : (data.tokens || 0);
+      const pct = (val / basis) * 100;
+      if (pct > 0.05) {
+        const seg = document.createElement('div');
+        seg.className = `provider-share-segment provider-share-segment-${p}`;
+        seg.style.width = pct + '%';
+        seg.title = `${getProviderLabel(p)}: ${Math.round(pct * 10) / 10}% (${costMode ? formatCost(data.cost) : formatTokens(data.tokens)})`;
+        shareBar.appendChild(seg);
+      }
+    }
+    shareBarContainer.appendChild(shareBar);
+    grid.appendChild(shareBarContainer);
+  }
+
   for (const p of providerList) {
     const data = providers[p] || { tokens: 0, cost: 0, messages: 0, sessionsCount: 0 };
     const card = document.createElement('div');
-    card.className = 'provider-card' + (state.provider === p ? ' active' : '');
+    card.className = 'provider-card';
     card.title = `Klicken, um nach ${getProviderLabel(p)} zu filtern`;
 
     const pct = costMode
@@ -1243,11 +1305,7 @@ function renderProviderBreakdown(providers, totalTokens, totalCost) {
     card.appendChild(stats);
 
     card.addEventListener('click', () => {
-      if (state.provider === p) {
-        setProvider('all');
-      } else {
-        setProvider(p);
-      }
+      setProvider(p);
     });
 
     grid.appendChild(card);
@@ -1316,7 +1374,7 @@ async function loadOverview() {
   document.getElementById('kpi-lines-net-sub').textContent = t('netChangeDesc');
 
   // Provider Breakdown
-  renderProviderBreakdown(overview.providers, displayTokens, displayCost);
+  renderProviderBreakdown(overview.providers, displayTokens, displayCost, overview);
 
   // Stats-cache banner (official Claude totals — single-user only)
   const banner = document.getElementById('stats-banner');
@@ -4321,14 +4379,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Provider filter
+  document.querySelectorAll('.provider-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setProvider(btn.dataset.provider);
+    });
+  });
   document.getElementById('provider-select')?.addEventListener('change', (e) => {
-    state.provider = e.target.value;
-    if (state.provider && state.provider !== 'all') {
-      localStorage.setItem('provider', state.provider);
-    } else {
-      localStorage.removeItem('provider');
-    }
-    loadTab(state.activeTab);
+    setProvider(e.target.value);
   });
 
   // Device OS toggle

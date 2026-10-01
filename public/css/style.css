@@ -161,23 +161,49 @@ body {
   border-color: var(--blue);
 }
 
-/* Provider Filter */
+/* Provider Filter Pills */
 .provider-filter {
+  display: flex;
+  gap: 3px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
   margin-left: 8px;
 }
-.provider-filter select {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
+.provider-btn {
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
   border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
   cursor: pointer;
-  outline: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
 }
-.provider-filter select:focus {
-  border-color: var(--blue);
+.provider-btn:hover {
+  color: var(--text);
+  background: var(--surface2);
 }
+.provider-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+}
+.provider-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.provider-dot-claude { background: #ea580c; }
+.provider-dot-codex { background: #10b981; }
+.provider-dot-antigravity { background: #3b82f6; }
 
 /* Device Management (Settings) */
 .device-list-item {
@@ -1055,6 +1081,78 @@ html.js .uheat-anim .uheat-legend {
   font-size: 15px;
   font-weight: 600;
   margin-top: 2px;
+}
+
+/* Provider Distribution / Share Bar */
+.provider-share-bar-container {
+  grid-column: 1 / -1;
+  margin-bottom: 2px;
+}
+.provider-share-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface2, #242938);
+  gap: 2px;
+}
+.provider-share-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+  min-width: 3px;
+}
+.provider-share-segment-claude { background: #ea580c; }
+.provider-share-segment-codex { background: #10b981; }
+.provider-share-segment-antigravity { background: #3b82f6; }
+
+/* Filtered State Banner (when a single provider is selected) */
+.provider-filter-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-card, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.provider-filter-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+  flex-wrap: wrap;
+}
+.provider-filter-banner-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.provider-filter-banner-stats {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.provider-filter-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface2, #242938);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.provider-filter-reset-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 /* Merge dialog */
@@ -3236,7 +3334,7 @@ html.js .content[data-nav-dir] .tab-panel.active > .table-wrapper { animation: n
 html.js .kpi-value.pop { animation: md-value-pop var(--dur-short) var(--ease-spring); }
 
 /* ── State layers + press + focus on every interactive surface ──── */
-.tab-btn, .period-btn, .btn-small, .rebuild-btn, .lang-btn,
+.tab-btn, .period-btn, .provider-btn, .btn-small, .rebuild-btn, .lang-btn,
 .modal-close, .btn-icon {
   position: relative;
   isolation: isolate;
@@ -3247,7 +3345,7 @@ html.js .kpi-value.pop { animation: md-value-pop var(--dur-short) var(--ease-spr
     transform var(--dur-quick) var(--ease-spring);
 }
 /* the wash */
-.tab-btn::after, .period-btn::after, .btn-small::after,
+.tab-btn::after, .period-btn::after, .provider-btn::after, .btn-small::after,
 .rebuild-btn::after, .lang-btn::after {
   content: "";
   position: absolute;
@@ -3260,15 +3358,15 @@ html.js .kpi-value.pop { animation: md-value-pop var(--dur-short) var(--ease-spr
   z-index: -1;
 }
 @media (hover: hover) {
-  .tab-btn:hover::after, .period-btn:hover:not(.active)::after,
+  .tab-btn:hover::after, .period-btn:hover:not(.active)::after, .provider-btn:hover:not(.active)::after,
   .btn-small:hover::after, .rebuild-btn:hover::after,
   .lang-btn:hover:not(.active)::after { opacity: 1; }
 }
 /* press response — physical */
-.tab-btn:active, .period-btn:active, .btn-small:active,
+.tab-btn:active, .period-btn:active, .provider-btn:active, .btn-small:active,
 .rebuild-btn:active, .lang-btn:active, .btn-icon:active,
 .modal-close:active { transform: scale(0.94); }
-.tab-btn:active::after, .period-btn:active::after, .btn-small:active::after,
+.tab-btn:active::after, .period-btn:active::after, .provider-btn:active::after, .btn-small:active::after,
 .rebuild-btn:active::after, .lang-btn:active::after { background: var(--state-press); opacity: 1; }
 
 /* focus-visible ring on everything operable */

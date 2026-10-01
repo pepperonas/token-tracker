@@ -222,8 +222,18 @@
         <div class="device-switcher" id="device-switcher" style="display:none;">
           <select id="device-select"></select>
         </div>
-        <div class="provider-filter" id="provider-filter">
-          <select id="provider-select" title="Provider auswählen">
+        <div class="provider-filter" id="provider-filter" role="group" aria-label="Provider">
+          <button class="provider-btn active" data-provider="all" data-i18n="allProviders">Alle</button>
+          <button class="provider-btn" data-provider="claude">
+            <span class="provider-dot provider-dot-claude"></span>Claude
+          </button>
+          <button class="provider-btn" data-provider="codex">
+            <span class="provider-dot provider-dot-codex"></span>Codex
+          </button>
+          <button class="provider-btn" data-provider="antigravity">
+            <span class="provider-dot provider-dot-antigravity"></span>Antigravity
+          </button>
+          <select id="provider-select" style="display:none;" title="Provider auswählen">
             <option value="all" data-i18n="allProviders">Alle Provider</option>
             <option value="claude">Claude Code</option>
             <option value="codex">Codex</option>
@@ -237,6 +247,9 @@
           var prov = localStorage.getItem('provider') || 'all';
           var ps = document.getElementById('provider-select');
           if (ps) ps.value = prov;
+          document.querySelectorAll('.provider-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.provider === prov);
+          });
           if (cd) {
             document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
             document.getElementById('custom-date-picker').value = cd;
