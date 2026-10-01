@@ -8,6 +8,9 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 
 ### Added
 
+- **Umbenennung in Token Tracker**:
+  - Das Projekt und Repository heißen nun offiziell **Token Tracker** (zuvor *Claude Token Tracker*).
+  - Alle UI-Elemente, Metadaten, API-Referenzen und Installationsskripte wurden synchronisiert.
 - **Multi-Provider-Unterstützung für OpenAI Codex und Google Antigravity**:
   - Automatisches Parsen und Verfolgen von OpenAI Codex Sitzungen aus `~/.codex/sessions/**/rollout-*.jsonl`.
   - Zero-Dependency Protobuf-Parser für Google Antigravity SQLite-Datenbanken (`~/.gemini/antigravity-cli/conversations/*.db`).
@@ -17,6 +20,10 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
   - Provider-Breakdown-Karten in der Übersicht mit Token-, Kosten- und Sitzungsanteilen.
   - Farbige Provider-Badges in Sitzungs- und Modelltabellen.
   - Neuer API-Endpoint `GET /api/providers` sowie `provider`-Filterung in allen wesentlichen Endpoints (`/api/overview`, `/api/sessions`, `/api/models`, `/api/projects`, `/api/daily`, `/api/hourly`).
+- **Token Tracker Sync Agent (Multi-Provider & Rename)**:
+  - Der Sync-Agent wurde in `token-tracker-sync-agent` umbenannt.
+  - Unterstützt nun die synchrone und überwachte Übertragung von Claude Code, Codex und Antigravity an Remote-Instanzen (wie VPS `tracker.celox.io`).
+  - Dienst- und Pfad-Migration auf `~/token-tracker-sync-agent/`, `io.celox.token-tracker-sync-agent` (macOS), `token-tracker-sync-agent.service` (Linux) und `TokenTrackerSyncAgent` (Windows).
 
 ## [0.4.1] — 2026-09-29
 
