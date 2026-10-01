@@ -117,7 +117,7 @@ Dashboard for analyzing your AI coding token usage (Claude Code, OpenAI Codex, G
 
 ### Dashboard & Visualization
 
-- **Multi-Provider Tracking (Claude Code, OpenAI Codex, Google Antigravity)** — track tokens, costs, models, and sessions across all three agent platforms simultaneously. Automatic zero-dependency ingestion from `~/.codex/sessions/**/rollout-*.jsonl` and `~/.gemini/antigravity-cli/conversations/*.db`, real-time file watcher, global header provider filter, breakdown cards, and colored badges
+- **Multi-Provider Tracking (Claude Code, OpenAI Codex, Google Antigravity)** — track tokens, costs, models, and sessions across all three agent platforms simultaneously. Automatic zero-dependency ingestion from `~/.codex/sessions/**/rollout-*.jsonl` and `~/.gemini/antigravity-cli/conversations/*.db`, real-time file watcher, segmented pill switcher in the header, visual share distribution bar, dynamic filter banners with quick reset, and colored badges
 - **25+ interactive charts** across 10 tabs (Overview, Sessions, Projects, Tools, Models, Insights, Productivity, Achievements, GitHub, Claude API, Info)
 - **Tool Cost Attribution** — proportional cost/token distribution per tool, MCP server breakdown (auto-detected via `mcp__` prefix), sub-agent tracking (via `/subagents/` path), cost-over-time chart, enhanced table with Type/Cost/Tokens columns
 - **Active sessions** — live display of currently running Claude Code sessions with project, model, duration, and cost

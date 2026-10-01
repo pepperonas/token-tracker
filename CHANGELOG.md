@@ -20,10 +20,21 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
   - Provider-Breakdown-Karten in der Übersicht mit Token-, Kosten- und Sitzungsanteilen.
   - Farbige Provider-Badges in Sitzungs- und Modelltabellen.
   - Neuer API-Endpoint `GET /api/providers` sowie `provider`-Filterung in allen wesentlichen Endpoints (`/api/overview`, `/api/sessions`, `/api/models`, `/api/projects`, `/api/daily`, `/api/hourly`).
+- **Intuitiver Provider-Pill-Switcher & dynamischer Verteilungsbalken**:
+  - Moderner Segmented-Control-Switcher in der Kopfzeile (`[ Alle ] [ 🟠 Claude ] [ 🟢 Codex ] [ 🔵 Antigravity ]`) mit 1-Klick-Umschaltung, farbigen Indikatoren und responsivem Umbruch.
+  - Neuer horizontaler Multi-Segment-Verteilungsbalken in der Übersicht zur optischen Darstellung der relativen Token- bzw. Kostenanteile über alle Provider.
+  - Dynamische Provider-Aufschlüsselung: Bei aktivem Einzelfilter (z. B. Codex) wird statt selbstreferenzieller 100%-Karten ein kompaktes Filter-Banner mit Kennzahlen und Schnell-Reset-Button (`✕ Alle Provider anzeigen`) angezeigt.
 - **Token Tracker Sync Agent (Multi-Provider & Rename)**:
   - Der Sync-Agent wurde in `token-tracker-sync-agent` umbenannt.
   - Unterstützt nun die synchrone und überwachte Übertragung von Claude Code, Codex und Antigravity an Remote-Instanzen (wie VPS `tracker.celox.io`).
   - Dienst- und Pfad-Migration auf `~/token-tracker-sync-agent/`, `io.celox.token-tracker-sync-agent` (macOS), `token-tracker-sync-agent.service` (Linux) und `TokenTrackerSyncAgent` (Windows).
+
+### Fixed
+
+- **Kostenberechnung bei 1h-Cache-Writes**:
+  - Im Aggregator wurde `cacheCreateCost` bisher nur mit der 5-Minuten-Basisrate multipliziert, wodurch der 1-Stunden-TTL-Zuschlag fehlte.
+  - Dadurch lagen die zusammengerechneten Gesamtkosten in der Übersichtsanzeige um ~8,5 % unter den tatsächlichen Provider-Kosten und Claude landete fälschlicherweise bei >100 %.
+  - Alle Cache-Create-Tiers (5m vs. 1h) werden nun cent-genau in allen Aggregationsebenen konsistent berücksichtigt.
 
 ## [0.4.1] — 2026-09-29
 

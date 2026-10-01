@@ -200,3 +200,18 @@ Eight wave-1 achievements were corrected in 2026-08 from **impossible** to hard:
 `output_ratio_60/70/80` demanded a 60–80 % output-token share where the real
 figure is 0.204 %, and `model_haiku_majority` demanded Haiku above half of all
 messages against 2.9 % actual. An unreachable badge is padding, not a goal.
+
+---
+
+## Multi-Provider Tracking & Filtering
+
+The dashboard tracks tokens, costs, active time, and session metrics across multiple coding agent platforms:
+* **Claude Code**: from `~/.claude/projects`
+* **OpenAI Codex**: from `~/.codex/sessions/**/rollout-*.jsonl`
+* **Google Antigravity**: from `~/.gemini/antigravity-cli/conversations/*.db`
+
+### Global Provider Filtering
+* The segmented pill switcher in the header (`[ Alle ] [ 🟠 Claude ] [ 🟢 Codex ] [ 🔵 Antigravity ]`) filters all dashboard metrics and charts across every tab.
+* In the Overview tab:
+  * When **All Providers** is active: an interactive multi-segment share bar displays the relative token or cost distribution, accompanied by summary cards for each provider.
+  * When a single provider is selected: the breakdown area converts into a high-visibility filter banner with active statistics and a quick reset button (`✕ Show All Providers`), avoiding redundant 100 % self-referential charts.

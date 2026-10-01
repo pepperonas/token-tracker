@@ -117,7 +117,7 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 
 ### Dashboard & Visualisierung
 
-- **Multi-Provider-Tracking (Claude Code, OpenAI Codex, Google Antigravity)** — gleichzeitige Erfassung von Tokens, Kosten, Modellen und Sitzungen über alle drei Plattformen. Automatisches, abweichungsfreies Parsen von `~/.codex/sessions/**/rollout-*.jsonl` und `~/.gemini/antigravity-cli/conversations/*.db`, Live-File-Watcher, globaler Provider-Filter in der Kopfzeile, Aufschlüsselungskarten und farbige Badges
+- **Multi-Provider-Tracking (Claude Code, OpenAI Codex, Google Antigravity)** — gleichzeitige Erfassung von Tokens, Kosten, Modellen und Sitzungen über alle drei Plattformen. Automatisches, abhängigkeitsfreies Parsen von `~/.codex/sessions/**/rollout-*.jsonl` und `~/.gemini/antigravity-cli/conversations/*.db`, Live-File-Watcher, moderner Segmented-Pill-Switcher im Header, visueller Verteilungsbalken, dynamische Filter-Banner mit Schnell-Reset und farbige Badges
 - **25+ interaktive Charts** über 10 Tabs (Übersicht, Sitzungen, Projekte, Tools, Modelle, Insights, Produktivität, Achievements, GitHub, Claude API, Info)
 - **Tool-Kostenverteilung** — proportionale Kosten-/Token-Verteilung pro Tool, MCP-Server-Aufschlüsselung (automatisch erkannt über `mcp__`-Präfix), Sub-Agent-Tracking (über `/subagents/`-Pfad), Kosten-Zeitverlauf-Chart, erweiterte Tabelle mit Typ-/Kosten-/Token-Spalten
 - **Aktive Sitzungen** — Live-Anzeige aktuell laufender Claude-Code-Sessions mit Projekt, Modell, Dauer und Kosten
