@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.5.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.5.0">
-  <img src="https://img.shields.io/badge/lines_of_code-42.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42128 lines of code across 75 files">
+  <img src="https://img.shields.io/badge/lines_of_code-42.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42126 lines of code across 75 files">
 </p>
 
 <p align="center">
@@ -338,7 +338,7 @@ powershell -ExecutionPolicy Bypass -Command "irm 'https://deine-domain.de/api/sy
 
 Das Script:
 - Prüft Node.js >= 20.12 und npm
-- Installiert den Agent nach `~/claude-sync-agent/` (macOS/Linux) bzw. `%USERPROFILE%\claude-sync-agent\` (Windows)
+- Installiert den Agent nach `~/token-tracker-sync-agent/` (macOS/Linux) bzw. `%USERPROFILE%\token-tracker-sync-agent\` (Windows)
 - Konfiguriert API-Key und Server-URL automatisch
 - Verifiziert die Server-Verbindung
 - Richtet Autostart ein (launchd auf macOS, systemd auf Linux, Task Scheduler auf Windows)
@@ -356,7 +356,7 @@ node index.js          # Starten (Full Sync + Watch)
 ### Autostart mit PM2 (Alternative)
 
 ```bash
-pm2 start ~/claude-sync-agent/index.js --name claude-sync
+pm2 start ~/token-tracker-sync-agent/index.js --name token-sync
 pm2 save
 ```
 

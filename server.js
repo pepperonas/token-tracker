@@ -346,9 +346,9 @@ ok()   { echo -e "\$GREEN✓\$NC \$1"; }
 warn() { echo -e "\$YELLOW⚠\$NC \$1"; }
 err()  { echo -e "\$RED✗\$NC \$1"; }
 
-INSTALL_DIR="\$HOME/claude-sync-agent"
+INSTALL_DIR="$HOME/token-tracker-sync-agent"
 
-echo -e "\$BOLD""Token Tracker Sync Agent Installer""\$NC"
+echo -e "$BOLD""Token Tracker Sync Agent Installer""$NC"
 echo ""
 
 # --- 1. Prerequisites ---
@@ -356,12 +356,12 @@ if ! command -v node &> /dev/null; then
   err "Node.js is not installed. Install Node.js 18+ first."
   exit 1
 fi
-NODE_VERSION=\$(node -v | sed 's/v//' | cut -d. -f1)
-if [ "\$NODE_VERSION" -lt 18 ]; then
-  err "Node.js 18+ required (found \$(node -v))"
+NODE_VERSION=$(node -v | sed 's/v//' | cut -d. -f1)
+if [ "$NODE_VERSION" -lt 18 ]; then
+  err "Node.js 18+ required (found $(node -v))"
   exit 1
 fi
-ok "Node.js \$(node -v)"
+ok "Node.js $(node -v)"
 
 if ! command -v npm &> /dev/null; then
   err "npm is not installed."
@@ -369,16 +369,16 @@ if ! command -v npm &> /dev/null; then
 fi
 
 # --- 2. Handle existing installation ---
-if [ -d "\$INSTALL_DIR" ]; then
-  info "Updating existing installation at \$INSTALL_DIR ..."
-  # Stop existing service before overwriting
-  OS_PRE=\$(uname -s)
-  if [ "\$OS_PRE" = "Darwin" ]; then
-    PLIST_PRE="\$HOME/Library/LaunchAgents/io.celox.claude-sync-agent.plist"
-    [ -f "\$PLIST_PRE" ] && launchctl unload "\$PLIST_PRE" 2>/dev/null || true
-  elif [ "\$OS_PRE" = "Linux" ]; then
-    systemctl --user stop claude-sync-agent 2>/dev/null || true
-  fi
+OS_PRE=$(uname -s)
+if [ "$OS_PRE" = "Darwin" ]; then
+  launchctl unload "$HOME/Library/LaunchAgents/io.celox.token-tracker-sync-agent.plist" 2>/dev/null || true
+  launchctl unload "$HOME/Library/LaunchAgents/io.celox.claude-sync-agent.plist" 2>/dev/null || true
+elif [ "$OS_PRE" = "Linux" ]; then
+  systemctl --user stop token-tracker-sync-agent 2>/dev/null || true
+  systemctl --user stop claude-sync-agent 2>/dev/null || true
+fi
+if [ -d "$INSTALL_DIR" ]; then
+  info "Updating existing installation at $INSTALL_DIR ..."
 fi
 
 # --- 3. Install files ---
@@ -433,7 +433,7 @@ OS=\$(uname -s)
 
 setup_launchd() {
   local PLIST_DIR="\$HOME/Library/LaunchAgents"
-  local PLIST="\$PLIST_DIR/io.celox.claude-sync-agent.plist"
+  local PLIST="\$PLIST_DIR/io.celox.token-tracker-sync-agent.plist"
   mkdir -p "\$PLIST_DIR"
 
   [ -f "\$PLIST" ] && launchctl unload "\$PLIST" 2>/dev/null || true
@@ -444,7 +444,7 @@ setup_launchd() {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>io.celox.claude-sync-agent</string>
+    <string>io.celox.token-tracker-sync-agent</string>
     <key>ProgramArguments</key>
     <array>
         <string>\$NODE_PATH</string>
@@ -476,12 +476,12 @@ PLISTEOF
 
 setup_systemd() {
   local SERVICE_DIR="\$HOME/.config/systemd/user"
-  local SERVICE="\$SERVICE_DIR/claude-sync-agent.service"
+  local SERVICE="\$SERVICE_DIR/token-tracker-sync-agent.service"
   mkdir -p "\$SERVICE_DIR"
 
   cat > "\$SERVICE" << SERVICEEOF
 [Unit]
-Description=Claude Sync Agent
+Description=Token Tracker Sync Agent
 After=network.target
 
 [Service]
@@ -496,15 +496,15 @@ WantedBy=default.target
 SERVICEEOF
 
   systemctl --user daemon-reload
-  systemctl --user enable claude-sync-agent 2>/dev/null
-  systemctl --user restart claude-sync-agent
+  systemctl --user enable token-tracker-sync-agent 2>/dev/null
+  systemctl --user restart token-tracker-sync-agent
   ok "Autostart configured (systemd)"
   ok "Agent is running — survives reboots"
   echo ""
-  info "Logs:    journalctl --user -u claude-sync-agent -f"
-  info "Stop:    systemctl --user stop claude-sync-agent"
-  info "Restart: systemctl --user restart claude-sync-agent"
-  info "Remove:  systemctl --user disable --now claude-sync-agent"
+  info "Logs:    journalctl --user -u token-tracker-sync-agent -f"
+  info "Stop:    systemctl --user stop token-tracker-sync-agent"
+  info "Restart: systemctl --user restart token-tracker-sync-agent"
+  info "Remove:  systemctl --user disable --now token-tracker-sync-agent"
 }
 
 echo ""
@@ -555,7 +555,7 @@ function Write-Ok($msg)    { Write-Host "  $msg" -ForegroundColor Green }
 function Write-Warn($msg)  { Write-Host "  $msg" -ForegroundColor Yellow }
 function Write-Err($msg)   { Write-Host "  $msg" -ForegroundColor Red }
 
-$InstallDir = Join-Path $env:USERPROFILE "claude-sync-agent"
+$InstallDir = Join-Path $env:USERPROFILE "token-tracker-sync-agent"
 
 Write-Host ""
 Write-Host "  Token Tracker Sync Agent Installer" -ForegroundColor White
@@ -576,12 +576,10 @@ if ($nodeMajor -lt 18) {
 Write-Ok "Node.js v$nodeVersion"
 
 # --- 2. Handle existing installation ---
+Stop-ScheduledTask -TaskName "TokenTrackerSyncAgent" -ErrorAction SilentlyContinue
+Stop-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
 if (Test-Path $InstallDir) {
     Write-Info "Updating existing installation at $InstallDir ..."
-    $task = Get-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
-    if ($task) {
-        Stop-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
-    }
 }
 
 # --- 3. Install files ---
@@ -642,8 +640,8 @@ $nodePath = (Get-Command node).Source
 $action = New-ScheduledTaskAction -Execute $nodePath -Argument (Join-Path $InstallDir "index.js") -WorkingDirectory $InstallDir
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 0)
-Register-ScheduledTask -TaskName "ClaudeSyncAgent" -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
-Start-ScheduledTask -TaskName "ClaudeSyncAgent" -ErrorAction SilentlyContinue
+Register-ScheduledTask -TaskName "TokenTrackerSyncAgent" -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
+Start-ScheduledTask -TaskName "TokenTrackerSyncAgent" -ErrorAction SilentlyContinue
 Write-Ok "Autostart configured (Task Scheduler)"
 Write-Ok "Agent is running — survives reboots"
 
@@ -652,9 +650,9 @@ Write-Host "  === Installation complete ===" -ForegroundColor Green
 Write-Host "  Directory: $InstallDir"
 Write-Host "  Server:    ${serverUrl}"
 Write-Host ""
-Write-Info "Stop:    Stop-ScheduledTask -TaskName ClaudeSyncAgent"
-Write-Info "Restart: Start-ScheduledTask -TaskName ClaudeSyncAgent"
-Write-Info "Remove:  Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:\`$false"
+Write-Info "Stop:    Stop-ScheduledTask -TaskName TokenTrackerSyncAgent"
+Write-Info "Restart: Start-ScheduledTask -TaskName TokenTrackerSyncAgent"
+Write-Info "Remove:  Unregister-ScheduledTask -TaskName TokenTrackerSyncAgent -Confirm:\`$false"
 Write-Host ""
 `;
 }
