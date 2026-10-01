@@ -1191,15 +1191,17 @@ function _renderTrendCard(key, data, opts) {
 
   // Delta vs the SAME point of the previous period (fair comparison)
   const deltaEl = document.getElementById('trend-delta-' + key);
-  let cls = 'flat', txt = '·';
+  let cls = 'flat', html = '·';
+  const upIcon = '<svg class="m3-trend-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>';
+  const downIcon = '<svg class="m3-trend-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>';
   if (prevSame > 0) {
     const pct = ((cur - prevSame) / prevSame) * 100;
-    if (Math.abs(pct) < 3) { txt = '≈ ' + (pct >= 0 ? '+' : '−') + Math.abs(Math.round(pct)) + ' %'; }
-    else if (pct > 0) { cls = 'up'; txt = '▲ +' + Math.round(pct) + ' %'; }
-    else { cls = 'down'; txt = '▼ −' + Math.abs(Math.round(pct)) + ' %'; }
-  } else if (cur > 0) { cls = 'up'; txt = '▲ ' + t('trendNew'); }
+    if (Math.abs(pct) < 3) { html = '≈ ' + (pct >= 0 ? '+' : '−') + Math.abs(Math.round(pct)) + ' %'; }
+    else if (pct > 0) { cls = 'up'; html = upIcon + ' +' + Math.round(pct) + ' %'; }
+    else { cls = 'down'; html = downIcon + ' −' + Math.abs(Math.round(pct)) + ' %'; }
+  } else if (cur > 0) { cls = 'up'; html = upIcon + ' ' + t('trendNew'); }
   deltaEl.className = 'trend-delta ' + cls;
-  deltaEl.textContent = txt;
+  deltaEl.innerHTML = html;
 
   document.getElementById('trend-compare-' + key).textContent = opts.compareLabel;
   document.getElementById('trend-sub-' + key).textContent = opts.subLabel(prevFull, cur);
@@ -1345,7 +1347,7 @@ function renderProviderBreakdown(providers, totalTokens, totalCost, overview) {
 
     const resetBtn = document.createElement('button');
     resetBtn.className = 'provider-filter-reset-btn';
-    resetBtn.innerHTML = '✕ ' + t('showAllProviders');
+    resetBtn.innerHTML = '<svg class="m3-btn-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> ' + t('showAllProviders');
     resetBtn.addEventListener('click', () => {
       setProvider('all');
     });
@@ -2617,7 +2619,11 @@ function openAchievementsDay(date) {
     row.className = 'ach-day-item tier-' + ach.tier;
     const icon = document.createElement('span');
     icon.className = 'ach-day-icon';
-    icon.textContent = ach.emoji || '🏆';
+    if (ach.emoji) {
+      icon.textContent = ach.emoji;
+    } else {
+      icon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>';
+    }
     const info = document.createElement('div');
     info.className = 'ach-day-info';
     const name = document.createElement('div');

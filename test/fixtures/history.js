@@ -38,12 +38,11 @@ function buildHistory(opts = {}) {
     const scale = 1 + age / days;         // volume grows over the history
     for (let i = 0; i < perDay; i++) {
       const idx = age * perDay + i;
-      // The final day is anchored a few minutes BEFORE `now`, not at a fixed
-      // hour: a fixed 08:00–18:00 slot lands in the future when the suite runs
-      // early in the morning (or in a UTC+14 timezone), and `getTrends()`
-      // correctly ignores future messages — which silently emptied "today".
+      // The final day is anchored a few minutes BEFORE `now`, but within today
+      // (so running right after midnight does not push timestamps into yesterday).
+      const todayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
       const ts = d === 0
-        ? new Date(end.getTime() - (perDay - i) * 60000)
+        ? new Date(Math.max(todayStart + (i + 1) * 1000, end.getTime() - (perDay - i) * 60000))
         : new Date(day.getFullYear(), day.getMonth(), day.getDate(), 8 + (i % 11), (i * 13) % 60, 0);
       const tools = TOOL_SETS[idx % TOOL_SETS.length];
       messages.push({

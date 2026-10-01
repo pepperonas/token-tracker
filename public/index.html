@@ -137,7 +137,10 @@
       <div class="modal-body">
         <p class="merge-hint" data-i18n="mergeHint">Wähle Projekte, die dieselbe Codebase sind (z. B. nach Umbenennen/Verschieben oder von einem anderen Gerät). Ihre Daten werden unter dem Zielnamen zusammengefasst. Nicht-destruktiv und jederzeit umkehrbar.</p>
         <div class="merge-suggest-bar">
-          <button type="button" class="btn-small" id="merge-suggest-btn" data-i18n="mergeSuggestBtn">🪄 Vorschläge</button>
+          <button type="button" class="btn-small" id="merge-suggest-btn">
+            <svg class="m3-btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
+            <span data-i18n="mergeSuggestBtn">Vorschläge</span>
+          </button>
         </div>
         <div class="merge-suggestions" id="merge-suggestions"></div>
         <div class="merge-sources" id="merge-sources"></div>
@@ -197,23 +200,33 @@
         <div class="tab-group" id="tab-group-activity">
           <button class="tab-group-btn" id="btn-group-activity" type="button" aria-haspopup="true" aria-expanded="false">
             <span class="tab-group-label" data-i18n="tabGroupActivity">Aktivität</span>
-            <span class="tab-group-arrow">▾</span>
+            <span class="tab-group-arrow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.375L6 9.375L7.4 7.975L12 12.575L16.6 7.975L18 9.375L12 15.375Z"/></svg>
+            </span>
           </button>
           <div class="tab-group-menu" id="menu-group-activity" role="menu">
             <button class="tab-btn tab-group-item" data-tab="sessions" role="menuitem">
-              <span class="tab-item-icon">💬</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+              </span>
               <span data-i18n="sessions">Sitzungen</span>
             </button>
             <button class="tab-btn tab-group-item" data-tab="projects" role="menuitem">
-              <span class="tab-item-icon">📁</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2zm10 14H4V8h16v10z"/></svg>
+              </span>
               <span data-i18n="projects">Projekte</span>
             </button>
             <button class="tab-btn tab-group-item" data-tab="models" role="menuitem">
-              <span class="tab-item-icon">🤖</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1 1 0 0 1 1 1v1.055A8.002 8.002 0 0 1 20 12v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-6a8.002 8.002 0 0 1 7-7.945V3a1 1 0 0 1 1-1zm0 4a6 6 0 0 0-6 6v6a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-6a6 6 0 0 0-6-6zm-3 5.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>
+              </span>
               <span data-i18n="models">Modelle</span>
             </button>
             <button class="tab-btn tab-group-item" data-tab="tools" role="menuitem">
-              <span class="tab-item-icon">🛠️</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+              </span>
               <span data-i18n="tools">Tools</span>
             </button>
           </div>
@@ -222,19 +235,27 @@
         <div class="tab-group" id="tab-group-analytics">
           <button class="tab-group-btn" id="btn-group-analytics" type="button" aria-haspopup="true" aria-expanded="false">
             <span class="tab-group-label" data-i18n="tabGroupAnalytics">Analyse</span>
-            <span class="tab-group-arrow">▾</span>
+            <span class="tab-group-arrow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.375L6 9.375L7.4 7.975L12 12.575L16.6 7.975L18 9.375L12 15.375Z"/></svg>
+            </span>
           </button>
           <div class="tab-group-menu" id="menu-group-analytics" role="menu">
             <button class="tab-btn tab-group-item" data-tab="insights" role="menuitem">
-              <span class="tab-item-icon">📈</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 8c-1.45 0-2.26 1.44-1.93 2.51l-3.55 3.56c-.3-.09-.74-.09-1.04 0l-2.56-2.55C12.25 10.45 11.44 9 10 9c-1.45 0-2.27 1.44-1.93 2.52l-4.56 4.55C2.44 15.74 1 16.55 1 18c0 1.1.9 2 2 2 1.45 0 2.26-1.44 1.93-2.51l4.55-4.56c.3.09.74.09 1.04 0l2.56 2.55C12.75 16.55 13.56 18 15 18c1.45 0 2.26-1.44 1.93-2.51l3.56-3.56c1.07.33 2.51-.48 2.51-1.93 0-1.1-.9-2-2-2z"/></svg>
+              </span>
               <span data-i18n="insights">Insights</span>
             </button>
             <button class="tab-btn tab-group-item" data-tab="productivity" role="menuitem">
-              <span class="tab-item-icon">⚡</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.9 17.55 11 21 11 21z"/></svg>
+              </span>
               <span data-i18n="productivity">Produktivität</span>
             </button>
             <button class="tab-btn tab-group-item" data-tab="achievements" role="menuitem">
-              <span class="tab-item-icon">🏆</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+              </span>
               <span data-i18n="achievements">Achievements</span>
             </button>
           </div>
@@ -243,15 +264,21 @@
         <div class="tab-group" id="tab-group-integrations">
           <button class="tab-group-btn" id="btn-group-integrations" type="button" aria-haspopup="true" aria-expanded="false">
             <span class="tab-group-label" data-i18n="tabGroupIntegrations">Integrationen</span>
-            <span class="tab-group-arrow">▾</span>
+            <span class="tab-group-arrow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.375L6 9.375L7.4 7.975L12 12.575L16.6 7.975L18 9.375L12 15.375Z"/></svg>
+            </span>
           </button>
           <div class="tab-group-menu" id="menu-group-integrations" role="menu">
             <button class="tab-btn tab-group-item" data-tab="github" role="menuitem">
-              <span class="tab-item-icon">🐙</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              </span>
               <span data-i18n="github">GitHub</span>
             </button>
             <button class="tab-btn tab-group-item" data-tab="claude-api" role="menuitem">
-              <span class="tab-item-icon">🔑</span>
+              <span class="tab-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14c-2.76 0-5-2.24-5-5s2.24-5 5-5c2.42 0 4.44 1.72 4.9 4h11.1v4h-2v-2h-2v2h-2v-2h-5.1c-.46 2.28-2.48 4-4.9 4zm0-8C5.34 6 4 7.34 4 9s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </span>
               <span data-i18n="claudeApi">Claude API</span>
             </button>
           </div>
@@ -538,7 +565,10 @@
       <!-- Usage trends: now-anchored comparisons, independent of the period filter -->
       <div class="trend-section" id="trend-section" style="display:none;">
         <div class="trend-header">
-          <h3 data-i18n="trendsTitle">📈 Nutzungs-Trends</h3>
+          <h3 class="trend-title-heading">
+            <svg class="m3-heading-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+            <span data-i18n="trendsTitle">Nutzungs-Trends</span>
+          </h3>
           <span class="trend-note" data-i18n="trendsNote">live · unabhängig vom Zeitraumfilter</span>
         </div>
         <div class="kpi-grid trend-grid">
