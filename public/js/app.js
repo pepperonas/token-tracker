@@ -530,6 +530,85 @@ function initTabScrollHints() {
   update();
 }
 
+function updateTabGroupUi(activeTab) {
+  const groupMap = {
+    'sessions': { group: 'tab-group-activity', labelKey: 'sessions' },
+    'projects': { group: 'tab-group-activity', labelKey: 'projects' },
+    'models': { group: 'tab-group-activity', labelKey: 'models' },
+    'tools': { group: 'tab-group-activity', labelKey: 'tools' },
+    'insights': { group: 'tab-group-analytics', labelKey: 'insights' },
+    'productivity': { group: 'tab-group-analytics', labelKey: 'productivity' },
+    'achievements': { group: 'tab-group-analytics', labelKey: 'achievements' },
+    'github': { group: 'tab-group-integrations', labelKey: 'github' },
+    'claude-api': { group: 'tab-group-integrations', labelKey: 'claudeApi' },
+  };
+
+  document.querySelectorAll('.tab-group').forEach(g => {
+    g.classList.remove('active');
+    g.classList.remove('open');
+    const btn = g.querySelector('.tab-group-btn');
+    if (btn) {
+      btn.classList.remove('active');
+      const cur = btn.querySelector('.tab-group-current');
+      if (cur) cur.remove();
+    }
+  });
+
+  const activeGroup = groupMap[activeTab];
+  if (activeGroup) {
+    const groupEl = document.getElementById(activeGroup.group);
+    if (groupEl) {
+      groupEl.classList.add('active');
+      const btn = groupEl.querySelector('.tab-group-btn');
+      if (btn) {
+        btn.classList.add('active');
+        const arrow = btn.querySelector('.tab-group-arrow');
+        const curSpan = document.createElement('span');
+        curSpan.className = 'tab-group-current';
+        curSpan.textContent = t(activeGroup.labelKey);
+        btn.insertBefore(curSpan, arrow);
+      }
+    }
+  }
+
+  const infoBtn = document.getElementById('btn-tab-info');
+  const settingsBtn = document.getElementById('btn-tab-settings');
+  if (infoBtn) infoBtn.classList.toggle('active', activeTab === 'info');
+  if (settingsBtn) settingsBtn.classList.toggle('active', activeTab === 'settings');
+}
+
+function initTabGroups() {
+  document.querySelectorAll('.tab-group-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const group = btn.closest('.tab-group');
+      const wasOpen = group.classList.contains('open');
+      document.querySelectorAll('.tab-group').forEach(g => g.classList.remove('open'));
+      if (!wasOpen) {
+        group.classList.add('open');
+      }
+    });
+  });
+
+  document.querySelectorAll('.tab-group-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.tab-group').forEach(g => g.classList.remove('open'));
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.tab-group')) {
+      document.querySelectorAll('.tab-group').forEach(g => g.classList.remove('open'));
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.tab-group').forEach(g => g.classList.remove('open'));
+    }
+  });
+}
+
 function switchTab(tab) {
   state.activeTab = tab;
   localStorage.setItem('activeTab', tab);
@@ -553,6 +632,7 @@ function switchTab(tab) {
     if (b.dataset.tab === tab) revealActiveTab(b);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+  updateTabGroupUi(tab);
   loadTab(tab);
 }
 
@@ -4290,6 +4370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTooltips();
   initExpressiveMotion();
   initTabScrollHints();
+  initTabGroups();
 
   // Check auth before loading data
   const authed = await checkAuth();

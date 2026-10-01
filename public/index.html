@@ -177,7 +177,14 @@
         <span class="logo">T</span>
         <span data-i18n="title">Token Tracker</span>
       </h1>
-      <div class="header-right">
+        <div class="header-actions">
+          <button class="header-icon-btn tab-btn" data-tab="info" id="btn-tab-info" title="Info & Doku" aria-label="Info">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </button>
+          <button class="header-icon-btn tab-btn" data-tab="settings" id="btn-tab-settings" title="Einstellungen" aria-label="Einstellungen">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
         <a href="/auth/github" class="header-login-btn" id="header-login-btn" style="display:none;">
           <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
           <span data-i18n="loginWithGithub">Sign in with GitHub</span>
@@ -193,17 +200,69 @@
     <nav class="tabs" id="tabs">
       <div class="tabs-left">
         <button class="tab-btn active" data-tab="overview" data-i18n="overview">Übersicht</button>
-        <button class="tab-btn" data-tab="sessions" data-i18n="sessions">Sitzungen</button>
-        <button class="tab-btn" data-tab="projects" data-i18n="projects">Projekte</button>
-        <button class="tab-btn" data-tab="tools" data-i18n="tools">Tools</button>
-        <button class="tab-btn" data-tab="models" data-i18n="models">Modelle</button>
-        <button class="tab-btn" data-tab="insights" data-i18n="insights">Insights</button>
-        <button class="tab-btn" data-tab="productivity" data-i18n="productivity">Produktivität</button>
-        <button class="tab-btn" data-tab="achievements" data-i18n="achievements">Achievements</button>
-        <button class="tab-btn" data-tab="github" data-i18n="github">GitHub</button>
-        <button class="tab-btn" data-tab="claude-api" data-i18n="claudeApi">Claude API</button>
-        <button class="tab-btn" data-tab="info" data-i18n="info">Info</button>
-        <button class="tab-btn" data-tab="settings" data-i18n="settings">Einstellungen</button>
+
+        <div class="tab-group" id="tab-group-activity">
+          <button class="tab-group-btn" id="btn-group-activity" type="button" aria-haspopup="true" aria-expanded="false">
+            <span class="tab-group-label" data-i18n="tabGroupActivity">Aktivität</span>
+            <span class="tab-group-arrow">▾</span>
+          </button>
+          <div class="tab-group-menu" id="menu-group-activity" role="menu">
+            <button class="tab-btn tab-group-item" data-tab="sessions" role="menuitem">
+              <span class="tab-item-icon">💬</span>
+              <span data-i18n="sessions">Sitzungen</span>
+            </button>
+            <button class="tab-btn tab-group-item" data-tab="projects" role="menuitem">
+              <span class="tab-item-icon">📁</span>
+              <span data-i18n="projects">Projekte</span>
+            </button>
+            <button class="tab-btn tab-group-item" data-tab="models" role="menuitem">
+              <span class="tab-item-icon">🤖</span>
+              <span data-i18n="models">Modelle</span>
+            </button>
+            <button class="tab-btn tab-group-item" data-tab="tools" role="menuitem">
+              <span class="tab-item-icon">🛠️</span>
+              <span data-i18n="tools">Tools</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="tab-group" id="tab-group-analytics">
+          <button class="tab-group-btn" id="btn-group-analytics" type="button" aria-haspopup="true" aria-expanded="false">
+            <span class="tab-group-label" data-i18n="tabGroupAnalytics">Analyse</span>
+            <span class="tab-group-arrow">▾</span>
+          </button>
+          <div class="tab-group-menu" id="menu-group-analytics" role="menu">
+            <button class="tab-btn tab-group-item" data-tab="insights" role="menuitem">
+              <span class="tab-item-icon">📈</span>
+              <span data-i18n="insights">Insights</span>
+            </button>
+            <button class="tab-btn tab-group-item" data-tab="productivity" role="menuitem">
+              <span class="tab-item-icon">⚡</span>
+              <span data-i18n="productivity">Produktivität</span>
+            </button>
+            <button class="tab-btn tab-group-item" data-tab="achievements" role="menuitem">
+              <span class="tab-item-icon">🏆</span>
+              <span data-i18n="achievements">Achievements</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="tab-group" id="tab-group-integrations">
+          <button class="tab-group-btn" id="btn-group-integrations" type="button" aria-haspopup="true" aria-expanded="false">
+            <span class="tab-group-label" data-i18n="tabGroupIntegrations">Integrationen</span>
+            <span class="tab-group-arrow">▾</span>
+          </button>
+          <div class="tab-group-menu" id="menu-group-integrations" role="menu">
+            <button class="tab-btn tab-group-item" data-tab="github" role="menuitem">
+              <span class="tab-item-icon">🐙</span>
+              <span data-i18n="github">GitHub</span>
+            </button>
+            <button class="tab-btn tab-group-item" data-tab="claude-api" role="menuitem">
+              <span class="tab-item-icon">🔑</span>
+              <span data-i18n="claudeApi">Claude API</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="tabs-right">
         <span class="live-label">

@@ -17,6 +17,9 @@ const LANG = {
     insights: 'Insights',
     info: 'Info',
     settings: 'Settings',
+    tabGroupActivity: 'Activity',
+    tabGroupAnalytics: 'Analytics',
+    tabGroupIntegrations: 'Integrations',
     // KPI
     totalTokens: 'Total Tokens',
     estimatedCost: 'Estimated Cost',
@@ -3004,6 +3007,9 @@ const LANG = {
     insights: 'Insights',
     info: 'Info',
     settings: 'Einstellungen',
+    tabGroupActivity: 'Aktivität',
+    tabGroupAnalytics: 'Analyse',
+    tabGroupIntegrations: 'Integrationen',
     // KPI
     totalTokens: 'Tokens gesamt',
     estimatedCost: 'Gesch\u00e4tzte Kosten',
