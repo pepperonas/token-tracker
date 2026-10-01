@@ -25,4 +25,4 @@ if (!fs.existsSync(CLAUDE_DIR)) {
   }
 }
 
-console.log('\nClaude Token Tracker ready! Run: npm start');
+console.log('\nToken Tracker ready! Run: npm start');

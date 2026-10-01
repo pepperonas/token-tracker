@@ -1,42 +1,42 @@
 <p align="center">
-  <img src="public/og-image.png" alt="Claude Token Tracker" width="720">
+  <img src="public/og-image.png" alt="Token Tracker" width="720">
 </p>
 
-<h1 align="center">Claude Token Tracker</h1>
+<h1 align="center">Token Tracker</h1>
 
 <p align="center">
-  Real-time dashboard for Claude Code token usage, API-equivalent cost estimation, and coding activity tracking.
+  Real-time analytics dashboard for AI coding token usage (Claude Code, OpenAI Codex, Google Antigravity) with cost estimation and activity tracking.
 </p>
 
 <!-- BADGES:START -->
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.5.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.5.0">
-  <img src="https://img.shields.io/badge/lines_of_code-41.6k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="41638 lines of code across 75 files">
+  <img src="https://img.shields.io/badge/lines_of_code-42.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42128 lines of code across 75 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-607_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="607 tests passing">
+  <img src="https://img.shields.io/badge/tests-608_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="608 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
 
 <p align="center">
-  <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/github/license/pepperonas/claude-token-tracker?style=flat-square&label=license&color=blue&logo=opensourceinitiative&logoColor=white" alt="license">
-  <img src="https://img.shields.io/github/v/release/pepperonas/claude-token-tracker?style=flat-square&label=release&color=orange&logo=github&logoColor=white" alt="release">
-  <img src="https://img.shields.io/github/last-commit/pepperonas/claude-token-tracker?style=flat-square&label=last%20commit&color=informational&logo=git&logoColor=white" alt="last commit">
-  <img src="https://img.shields.io/github/commit-activity/m/pepperonas/claude-token-tracker?style=flat-square&label=commits%2Fmonth&color=informational&logo=git&logoColor=white" alt="commits/month">
-  <img src="https://img.shields.io/github/languages/code-size/pepperonas/claude-token-tracker?style=flat-square&label=code%20size&color=informational&logo=github&logoColor=white" alt="code size">
+  <a href="https://github.com/pepperonas/token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <img src="https://img.shields.io/github/license/pepperonas/token-tracker?style=flat-square&label=license&color=blue&logo=opensourceinitiative&logoColor=white" alt="license">
+  <img src="https://img.shields.io/github/v/release/pepperonas/token-tracker?style=flat-square&label=release&color=orange&logo=github&logoColor=white" alt="release">
+  <img src="https://img.shields.io/github/last-commit/pepperonas/token-tracker?style=flat-square&label=last%20commit&color=informational&logo=git&logoColor=white" alt="last commit">
+  <img src="https://img.shields.io/github/commit-activity/m/pepperonas/token-tracker?style=flat-square&label=commits%2Fmonth&color=informational&logo=git&logoColor=white" alt="commits/month">
+  <img src="https://img.shields.io/github/languages/code-size/pepperonas/token-tracker?style=flat-square&label=code%20size&color=informational&logo=github&logoColor=white" alt="code size">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/pepperonas/claude-token-tracker?style=flat-square&label=stars&color=gold&logo=github&logoColor=white" alt="stars">
-  <img src="https://img.shields.io/github/forks/pepperonas/claude-token-tracker?style=flat-square&label=forks&color=informational&logo=github&logoColor=white" alt="forks">
-  <img src="https://img.shields.io/github/issues/pepperonas/claude-token-tracker?style=flat-square&label=open%20issues&color=informational&logo=github&logoColor=white" alt="open issues">
-  <img src="https://img.shields.io/github/issues-pr/pepperonas/claude-token-tracker?style=flat-square&label=open%20PRs&color=informational&logo=github&logoColor=white" alt="open PRs">
-  <img src="https://img.shields.io/github/contributors/pepperonas/claude-token-tracker?style=flat-square&label=contributors&color=informational&logo=github&logoColor=white" alt="contributors">
-  <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome"></a>
+  <img src="https://img.shields.io/github/stars/pepperonas/token-tracker?style=flat-square&label=stars&color=gold&logo=github&logoColor=white" alt="stars">
+  <img src="https://img.shields.io/github/forks/pepperonas/token-tracker?style=flat-square&label=forks&color=informational&logo=github&logoColor=white" alt="forks">
+  <img src="https://img.shields.io/github/issues/pepperonas/token-tracker?style=flat-square&label=open%20issues&color=informational&logo=github&logoColor=white" alt="open issues">
+  <img src="https://img.shields.io/github/issues-pr/pepperonas/token-tracker?style=flat-square&label=open%20PRs&color=informational&logo=github&logoColor=white" alt="open PRs">
+  <img src="https://img.shields.io/github/contributors/pepperonas/token-tracker?style=flat-square&label=contributors&color=informational&logo=github&logoColor=white" alt="contributors">
+  <a href="https://github.com/pepperonas/token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome"></a>
 </p>
 
 <p align="center">
@@ -120,8 +120,8 @@
 ## Quick Start
 
 ```bash
-git clone https://github.com/pepperonas/claude-token-tracker.git
-cd claude-token-tracker
+git clone https://github.com/pepperonas/token-tracker.git
+cd token-tracker
 npm install
 npm start
 ```
@@ -157,7 +157,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **607 automated tests** — unit, integration, and multi-user API tests
+- **608 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

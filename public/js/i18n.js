@@ -1,6 +1,6 @@
 const LANG = {
   en: {
-    title: 'Claude Token Tracker',
+    title: 'Token Tracker',
     today: 'Today',
     days7: '7 Days',
     days30: '30 Days',
@@ -2985,7 +2985,7 @@ const LANG = {
     mSessionSpanD: 'Idle time counts as work and overlapping sessions add up — this exceeds the wall clock and is not a measure of time spent.',
   },
   de: {
-    title: 'Claude Token Tracker',
+    title: 'Token Tracker',
     today: 'Heute',
     days7: '7 Tage',
     days30: '30 Tage',

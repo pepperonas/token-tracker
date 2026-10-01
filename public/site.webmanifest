@@ -1,7 +1,7 @@
 {
-  "name": "Claude Token Tracker",
+  "name": "Token Tracker",
   "short_name": "Token Tracker",
-  "description": "Real-time dashboard for Claude Code token usage",
+  "description": "Real-time dashboard for AI coding token usage (Claude Code, OpenAI Codex, Google Antigravity)",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d1117",

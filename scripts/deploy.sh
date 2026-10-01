@@ -4,7 +4,7 @@ set -e
 VPS="celox"
 APP_DIR="/root/apps/claude-token-tracker"
 
-echo "Deploying Claude Token Tracker to tracker.celox.io..."
+echo "Deploying Token Tracker to tracker.celox.io..."
 
 # Sync files (exclude node_modules, data, .env, .git)
 rsync -avz --delete \

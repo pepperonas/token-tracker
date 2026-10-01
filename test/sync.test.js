@@ -99,6 +99,35 @@ describe('sync API', () => {
       expect(msgsB.length).toBe(1);
       expect(msgsB[0].id).toBe('msg_b1');
     });
+
+    it('inserts and retrieves messages across multiple providers', () => {
+      const { createUser, insertMessagesForUser, getMessagesForUser } = require('../lib/db');
+      const user = createUser({ githubId: '202', username: 'multiprov' });
+
+      insertMessagesForUser([
+        {
+          id: 'claude_msg_1', timestamp: '2026-02-22T10:00:00.000Z',
+          model: 'claude-opus-4-6', sessionId: 's-claude', project: 'proj',
+          inputTokens: 100, outputTokens: 50, provider: 'claude'
+        },
+        {
+          id: 'codex_msg_1', timestamp: '2026-02-22T10:01:00.000Z',
+          model: 'gpt-5.6-terra', sessionId: 's-codex', project: 'proj',
+          inputTokens: 200, outputTokens: 60, provider: 'codex'
+        },
+        {
+          id: 'agy_msg_1', timestamp: '2026-02-22T10:02:00.000Z',
+          model: 'gemini-3.8-flash', sessionId: 's-agy', project: 'proj',
+          inputTokens: 300, outputTokens: 70, provider: 'antigravity'
+        }
+      ], () => 0, user.id);
+
+      const msgs = getMessagesForUser(user.id);
+      expect(msgs.length).toBe(3);
+      expect(msgs[0].provider).toBe('claude');
+      expect(msgs[1].provider).toBe('codex');
+      expect(msgs[2].provider).toBe('antigravity');
+    });
   });
 
   describe('API key authentication', () => {

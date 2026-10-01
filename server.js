@@ -68,7 +68,7 @@ function readStatsCache() {
 }
 
 // --- Init ---
-console.log('Starting Claude Token Tracker...');
+console.log('Starting Token Tracker...');
 if (MULTI_USER) console.log('Multi-user mode enabled');
 
 // 1. Initialize DB
@@ -348,7 +348,7 @@ err()  { echo -e "\$RED✗\$NC \$1"; }
 
 INSTALL_DIR="\$HOME/claude-sync-agent"
 
-echo -e "\$BOLD""Claude Sync Agent Installer""\$NC"
+echo -e "\$BOLD""Token Tracker Sync Agent Installer""\$NC"
 echo ""
 
 # --- 1. Prerequisites ---
@@ -558,7 +558,7 @@ function Write-Err($msg)   { Write-Host "  $msg" -ForegroundColor Red }
 $InstallDir = Join-Path $env:USERPROFILE "claude-sync-agent"
 
 Write-Host ""
-Write-Host "  Claude Sync Agent Installer" -ForegroundColor White
+Write-Host "  Token Tracker Sync Agent Installer" -ForegroundColor White
 Write-Host ""
 
 # --- 1. Prerequisites ---
@@ -725,7 +725,8 @@ const server = http.createServer((req, res) => {
           cacheCreate5m: m.cacheCreate5m || 0, cacheCreate1h: m.cacheCreate1h || 0,
           stopReason: m.stopReason, tools: m.tools || [], toolCounts: m.toolCounts || {},
           isSubagent: !!(m.isSubagent), linesAdded: m.linesAdded || 0,
-          linesRemoved: m.linesRemoved || 0, linesWritten: m.linesWritten || 0
+          linesRemoved: m.linesRemoved || 0, linesWritten: m.linesWritten || 0,
+          provider: m.provider || 'claude'
         })) : null;
         aggregatorCache.addToUser(syncUser.id, aggMessages, hasRateLimitEvents ? rateLimitEvents : null);
       }

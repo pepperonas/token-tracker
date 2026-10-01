@@ -6,31 +6,31 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-v0.5.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.5.0">
-  <img src="https://img.shields.io/badge/lines_of_code-41.6k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="41638 lines of code across 75 files">
+  <img src="https://img.shields.io/badge/lines_of_code-42.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42128 lines of code across 75 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-607_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="607 tests passing">
+  <img src="https://img.shields.io/badge/tests-608_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="608 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
 
 <p align="center">
-  <a href="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/claude-token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/github/license/pepperonas/claude-token-tracker?style=flat-square&label=license&color=blue&logo=opensourceinitiative&logoColor=white" alt="license">
-  <img src="https://img.shields.io/github/v/release/pepperonas/claude-token-tracker?style=flat-square&label=release&color=orange&logo=github&logoColor=white" alt="release">
-  <img src="https://img.shields.io/github/last-commit/pepperonas/claude-token-tracker?style=flat-square&label=last%20commit&color=informational&logo=git&logoColor=white" alt="last commit">
-  <img src="https://img.shields.io/github/commit-activity/m/pepperonas/claude-token-tracker?style=flat-square&label=commits%2Fmonth&color=informational&logo=git&logoColor=white" alt="commits/month">
-  <img src="https://img.shields.io/github/languages/code-size/pepperonas/claude-token-tracker?style=flat-square&label=code%20size&color=informational&logo=github&logoColor=white" alt="code size">
+  <a href="https://github.com/pepperonas/token-tracker/actions/workflows/ci.yml"><img src="https://github.com/pepperonas/token-tracker/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <img src="https://img.shields.io/github/license/pepperonas/token-tracker?style=flat-square&label=license&color=blue&logo=opensourceinitiative&logoColor=white" alt="license">
+  <img src="https://img.shields.io/github/v/release/pepperonas/token-tracker?style=flat-square&label=release&color=orange&logo=github&logoColor=white" alt="release">
+  <img src="https://img.shields.io/github/last-commit/pepperonas/token-tracker?style=flat-square&label=last%20commit&color=informational&logo=git&logoColor=white" alt="last commit">
+  <img src="https://img.shields.io/github/commit-activity/m/pepperonas/token-tracker?style=flat-square&label=commits%2Fmonth&color=informational&logo=git&logoColor=white" alt="commits/month">
+  <img src="https://img.shields.io/github/languages/code-size/pepperonas/token-tracker?style=flat-square&label=code%20size&color=informational&logo=github&logoColor=white" alt="code size">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/pepperonas/claude-token-tracker?style=flat-square&label=stars&color=gold&logo=github&logoColor=white" alt="stars">
-  <img src="https://img.shields.io/github/forks/pepperonas/claude-token-tracker?style=flat-square&label=forks&color=informational&logo=github&logoColor=white" alt="forks">
-  <img src="https://img.shields.io/github/issues/pepperonas/claude-token-tracker?style=flat-square&label=open%20issues&color=informational&logo=github&logoColor=white" alt="open issues">
-  <img src="https://img.shields.io/github/issues-pr/pepperonas/claude-token-tracker?style=flat-square&label=open%20PRs&color=informational&logo=github&logoColor=white" alt="open PRs">
-  <img src="https://img.shields.io/github/contributors/pepperonas/claude-token-tracker?style=flat-square&label=contributors&color=informational&logo=github&logoColor=white" alt="contributors">
-  <a href="https://github.com/pepperonas/claude-token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome"></a>
+  <img src="https://img.shields.io/github/stars/pepperonas/token-tracker?style=flat-square&label=stars&color=gold&logo=github&logoColor=white" alt="stars">
+  <img src="https://img.shields.io/github/forks/pepperonas/token-tracker?style=flat-square&label=forks&color=informational&logo=github&logoColor=white" alt="forks">
+  <img src="https://img.shields.io/github/issues/pepperonas/token-tracker?style=flat-square&label=open%20issues&color=informational&logo=github&logoColor=white" alt="open issues">
+  <img src="https://img.shields.io/github/issues-pr/pepperonas/token-tracker?style=flat-square&label=open%20PRs&color=informational&logo=github&logoColor=white" alt="open PRs">
+  <img src="https://img.shields.io/github/contributors/pepperonas/token-tracker?style=flat-square&label=contributors&color=informational&logo=github&logoColor=white" alt="contributors">
+  <a href="https://github.com/pepperonas/token-tracker/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome"></a>
 </p>
 
 <p align="center">
@@ -104,12 +104,12 @@
 ---
 
 <p align="center">
-  <img src="public/og-image.png" alt="Claude Token Tracker" width="720">
+  <img src="public/og-image.png" alt="Token Tracker" width="720">
 </p>
 
-# Claude Token Tracker
+# Token Tracker
 
-Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL session files, estimates API-equivalent costs, tracks lines of code, and displays everything in real-time. Supports **single-user** (local) and **multi-user** (hosted with GitHub OAuth + Sync Agent).
+Dashboard for analyzing your AI coding token usage (Claude Code, OpenAI Codex, Google Antigravity). Reads session files, estimates API-equivalent costs, tracks lines of code, and displays everything in real-time. Supports **single-user** (local) and **multi-user** (hosted with GitHub OAuth + Sync Agent).
 
 > **Note on costs:** Claude Code is billed as a flat-rate subscription (Pro/Max plan), not per token. The costs shown in this dashboard are **API-equivalent estimates** — they show what your token usage would cost at standard Anthropic API rates. This is useful for understanding relative usage patterns, comparing efficiency across sessions, and seeing the value you get from your subscription.
 
@@ -193,7 +193,7 @@ Dashboard for analyzing your Claude Code token usage. Reads Claude Code's JSONL 
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **607 automated tests** (unit + integration + multi-user API + achievements)
+- **608 automated tests** (unit + integration + multi-user API + achievements)
 - **Per-project report (HTML + PDF)** — standalone, print-optimised report per project: KPIs, cost split by component including both cache-write tiers, cost over time, model and session tables, and a methodology section. No CDN, no chart library — inline SVG only. "PDF" is the browser's own print dialog
 - **"How it adds up"** — a methodology dialog behind every KPI: formulas, the 5-minute idle cap, the price source, and what is deliberately not counted
 - **Accurate cache pricing** — cache writes billed by TTL tier (5 min = 1.25x input, 1 h = 2x). Claude Code writes mostly to the 1-hour cache; a flat rate understates cost by ~8.5%
@@ -245,8 +245,8 @@ Multi-User:
 ## Installation
 
 ```bash
-git clone https://github.com/pepperonas/claude-token-tracker.git
-cd claude-token-tracker
+git clone https://github.com/pepperonas/token-tracker.git
+cd token-tracker
 npm install
 npm start
 ```
@@ -396,8 +396,8 @@ Example deployment with PM2 + Nginx + SSL:
 
 ```bash
 # On the server
-git clone https://github.com/pepperonas/claude-token-tracker.git
-cd claude-token-tracker
+git clone https://github.com/pepperonas/token-tracker.git
+cd token-tracker
 npm ci --production
 cp .env.example .env   # Configure
 pm2 start server.js --name token-tracker --node-args='--env-file=.env'

@@ -318,7 +318,7 @@ describe('API endpoints', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/html');
     expect(res.body).toContain('<!DOCTYPE html>');
-    expect(res.body).toContain('Claude Token Tracker');
+    expect(res.body).toContain('Token Tracker');
   });
 
   // --- Assertions against the seeded 45-day history (see fixtures/history.js) --
