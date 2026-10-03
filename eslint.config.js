@@ -16,6 +16,7 @@ module.exports = [
         setTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        clearTimeout: 'readonly',
         Promise: 'readonly',
         Set: 'readonly',
         Map: 'readonly',

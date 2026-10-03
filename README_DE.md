@@ -5,12 +5,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.5.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.5.0">
-  <img src="https://img.shields.io/badge/lines_of_code-42.7k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="42701 lines of code across 75 files">
+  <img src="https://img.shields.io/badge/version-v0.6.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.6.0">
+  <img src="https://img.shields.io/badge/lines_of_code-43.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="43136 lines of code across 76 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-608_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="608 tests passing">
+  <img src="https://img.shields.io/badge/tests-640_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="640 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -34,19 +34,19 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/API_routes-71-0969da?style=flat-square" alt="71 API routes">
+  <img src="https://img.shields.io/badge/API_routes-70-0969da?style=flat-square" alt="70 API routes">
   <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
   <img src="https://img.shields.io/badge/lib_modules-20-0969da?style=flat-square" alt="20 library modules">
   <img src="https://img.shields.io/badge/charts-44-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="44 chart types">
   <img src="https://img.shields.io/badge/doc_pages-5-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="5 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-37-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="37 test files">
+  <img src="https://img.shields.io/badge/test_files-38-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="38 test files">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-5896_x_2-bf8700?style=flat-square" alt="5896 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-5914_x_2-bf8700?style=flat-square" alt="5914 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 
@@ -151,6 +151,15 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 - **Lazy Loading** — schnelle Daten (Stats + Billing) werden sofort angezeigt, langsame Daten (Actions-Nutzung, Code-Statistiken) laden im Hintergrund nach
 - **Sanfter Refresh** — Zeitraumwechsel und Refresh-Button aktualisieren Daten ohne Spinner oder Scroll-Sprung
 
+### Claude-Abo-Nutzung
+
+- **Die Werte, die Claude Code unter `/usage` zeigt** — aktuelle Sitzung, Woche (alle Modelle), Woche je Modell (z. B. Fable), dazu Extra-Usage und die Aufteilung der Woche nach Bereich (Claude Code / Chat / …)
+- **Box in der Übersicht + Chip in der Kopfzeile** — je Limit Balken, Prozent und Reset (relativ und absolut, Europe/Berlin); der Chip zeigt in jedem Tab das Sitzungs-Prozent und springt per Klick zur Box. Zustände für „lädt“, „veraltet (Stand: …)“ und „Fehler“
+- **Unbekannte Limits bleiben sichtbar** — neue Limit-Arten und Codename-Objekte mit echter Nutzung erscheinen mit ihrem Rohnamen, statt verworfen zu werden
+- **Ein Abruf, schonend für den Endpoint** — der Server fragt alle 5 Minuten ab (`CLAUDE_USAGE_POLL_MINUTES`, mindestens 2), weicht bei 429 exponentiell bis 60 Minuten aus, die Seite liest nur den Zwischenspeicher
+- **Token wird nie gespeichert** — bei jedem Abruf frisch aus der macOS-Keychain (oder `~/.claude/.credentials.json`) gelesen; nie geloggt, gespeichert oder erneuert. Ein abgelaufener Token zeigt „Claude Code einmal starten“
+- **Nur lokal im Einzelnutzer-Modus** — Quelle ist der undokumentierte Endpoint `api.anthropic.com/api/oauth/usage`; auf einer gehosteten Mehrnutzer-Instanz ist die Funktion aus
+
 ### Claude API Integration
 
 - **Anthropic Admin API Dashboard** — Verbindung über Admin Key (`sk-ant-admin`) für organisationsweite Nutzungs- und Kostendaten der Anthropic API
@@ -193,7 +202,7 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **608 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **640 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 - **Projekt-Report (HTML + PDF)** — eigenständiger, druckoptimierter Report je Projekt: Kennzahlen, Kosten nach Komponente inklusive beider Cache-Schreibstufen, Kostenverlauf, Modell- und Sitzungstabellen sowie ein Abschnitt zum Rechenweg. Ohne CDN und ohne Chart-Bibliothek — Diagramme sind Inline-SVG. „PDF" läuft über den Druckdialog des Browsers
 - **„Wie wird gerechnet?"** — ein Rechenweg-Dialog hinter jeder Kennzahl: Formeln, der 5-Minuten-Deckel, die Preisquelle und was bewusst nicht erfasst wird
 - **Exakte Cache-Preise** — Cache-Schreibvorgänge werden nach Laufzeit abgerechnet (5 Min = 1,25× Eingabe, 1 Std = 2×). Claude Code schreibt überwiegend in den 1-Stunden-Cache; ein Pauschalsatz beziffert die Kosten rund 8,5 % zu niedrig
@@ -238,6 +247,7 @@ Multi-User:
 | `lib/achievements.js` | 1200 Achievement-Definitionen mit Check-Logik, Stats-Builder, stufenbasierten Punkten und Unlock-Tracking |
 | `lib/github.js` | GitHub-API-Integration (REST + GraphQL), Billing via Usage-Summary-API, PR-Statistiken, Contributions, Code-Statistiken, Actions-Nutzung pro Repo mit OS-Multiplikatoren, Stale-While-Revalidate-Cache (60-Min-TTL) |
 | `lib/anthropic-api.js` | Anthropic Admin API Integration — Usage/Cost-Reports, Per-API-Key-Aufschlüsselung (4 parallele Requests: Usage nach Modell, Usage nach Key+Modell, Cost-Report, API-Key-Namen), SWR-Cache, AES-256-GCM Key-Verschlüsselung |
+| `lib/claude-usage.js` | Claude-Abo-Nutzungslimits von `api.anthropic.com/api/oauth/usage`: Token frisch aus der Keychain (nie gespeichert), defensiver Parser, Abruf durch den Server mit 429-Backoff |
 | `lib/export-html.js` | Mobil-optimierter HTML-Snapshot-Generator mit Chart.js, 8 Tabs, 12+ Charts, sortierbaren Tabellen und responsiven Breakpoints (768px/480px/412px) |
 | `server.js` | Vanilla `http.createServer` mit 50+ API-Routen, SSE und statischen Dateien |
 | `sync-agent/` | Standalone CLI-Tool für Client-seitiges Watching und Uploading |
@@ -267,6 +277,8 @@ Erstelle eine `.env` Datei (optional für Single-User, erforderlich für Multi-U
 | `BACKUP_PATH` | *(leer)* | Zielverzeichnis für automatische Backups |
 | `BACKUP_INTERVAL_HOURS` | `6` | Backup-Intervall in Stunden |
 | `GITHUB_TOKEN` | — | GitHub Personal Access Token (für GitHub-Tab) |
+| `CLAUDE_USAGE_POLL_MINUTES` | `5` | Minuten zwischen zwei Abrufen der Claude-Abo-Limits (mindestens 2) |
+| `CLAUDE_USAGE_ENABLED` | `true` | `false` schaltet die Abo-Limits ab (im Mehrnutzer-Modus immer aus) |
 
 ### Multi-User-Modus
 
@@ -445,6 +457,8 @@ Der Tracker läuft produktiv unter [tracker.celox.io](https://tracker.celox.io).
 | `/api/anthropic/dashboard` | GET | Anthropic API Usage/Cost Dashboard mit Per-Key-Aufschlüsselung |
 | `/api/anthropic/budget` | GET/POST | Monatliches Budget abfragen oder setzen |
 | `/api/anthropic/refresh` | POST | Anthropic-Daten-Cache aktualisieren |
+| `/api/claude-usage` | GET | Zwischengespeicherte Claude-Abo-Limits (Sitzung, Woche, Woche je Modell, Extra-Usage) — nur lokal |
+| `/api/claude-usage/refresh` | POST | Limits jetzt abrufen (höchstens alle 2 Minuten, nie während eines 429-Backoffs) |
 | `/api/rate-limits` | GET | Rate-Limit-Ereignisstatistiken (gesamt, täglich) |
 | `/api/devices` | GET/POST | Geräte auflisten oder erstellen (Multi-User) |
 | `/api/devices/:id` | PUT/DELETE | Gerät umbenennen oder löschen |

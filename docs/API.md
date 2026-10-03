@@ -106,7 +106,7 @@ message passes through.
 
 | Route | Description |
 |---|---|
-| `POST /api/sync` | Device API key. Body `{ messages[], rateLimitEvents?[], planUsage? }`. Idempotent — messages are upserted by ID. |
+| `POST /api/sync` | Device API key. Body `{ messages[], rateLimitEvents?[] }`. A `planUsage` field from older agents is accepted and ignored. Idempotent — messages are upserted by ID. |
 | `/api/sync-key` | The legacy account-level key. |
 | `/api/sync-agent/install.sh?key=…` | A personalised installer with the config baked in. `install.ps1` for Windows. |
 
@@ -148,13 +148,16 @@ All stale-while-revalidate cached; see [CONFIGURATION.md](CONFIGURATION.md).
 | `POST /api/anthropic/refresh` | Force a refresh. |
 | `POST /api/user/anthropic-key` | Store the key AES-256-GCM encrypted. |
 
-## Plan usage
+## Claude subscription usage
+
+Local single-user mode only — in multi-user mode, under the test runner, or
+with `CLAUDE_USAGE_ENABLED=false` both routes answer `{ enabled: false }`.
+Neither route ever returns or accepts a token.
 
 | Route | Description |
 |---|---|
-| `/api/plan-usage` | Session and weekly limits from the claude.ai account. |
-| `POST /api/plan-usage/token` | Store the OAuth token. |
-| `POST /api/plan-usage/refresh` | Clear the 5-minute cache and refetch. |
+| `/api/claude-usage` | The poller's cached view: `{ enabled, status: loading\|ok\|stale\|error, error, data: { source, limits[], extraUsage, breakdown }, fetchedAt, lastAttemptAt, nextAttemptAt, intervalMinutes }`. Never triggers an upstream call. Each limit is `{ id, kind, name, group, percentUsed, resetsAt, scopeLabel, dollars? }`; unknown kinds keep their raw name. |
+| `POST /api/claude-usage/refresh` | Fetch now — at most every 2 minutes and never during a 429 backoff; otherwise returns the cached view with `throttled: true`. |
 
 ## Export and maintenance
 

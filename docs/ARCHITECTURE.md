@@ -59,7 +59,8 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/pricing-fetcher.js` | Daily LiteLLM refresh, cached in the DB so the first calculation after a restart is already fresh; records every price change in the price history so past costs stay fixed. |
 | `lib/achievements.js` | 1,200 definitions, the stats they read, and the historical backfill. |
 | `lib/auth.js` | GitHub OAuth, sessions, API-key authentication. |
-| `lib/github.js`, `lib/anthropic-api.js`, `lib/plan-usage.js` | External integrations, all cached. |
+| `lib/github.js`, `lib/anthropic-api.js` | External integrations, all cached. |
+| `lib/claude-usage.js` | Claude subscription limits from the undocumented `api.anthropic.com/api/oauth/usage` (what Claude Code shows under `/usage`). Reads the OAuth token fresh from the keychain / `~/.claude/.credentials.json` on every fetch and never stores, logs or refreshes it; one server-side poller with 429 backoff; defensive parser. Local single-user only. |
 | `lib/report-project.js` | Standalone per-project HTML report. |
 | `lib/export-html.js` | Self-contained interactive HTML snapshot. |
 | `lib/backup.js` | `VACUUM INTO` snapshots with a shrink guard. |
@@ -138,7 +139,7 @@ is added 1.6 s after load and never removed.
 | `users`, `user_sessions`, `devices` | Multi-user accounts, sessions and machines. |
 | `project_shares` | Share tokens. |
 | `github_cache` | Cached external API responses. |
-| `metadata` | Key/value: pricing cache, migration flags, plan usage. |
+| `metadata` | Key/value: pricing cache, price history, migration flags, the last Claude usage result (`claude_usage_cache` — no token). |
 
 Migrations are additive `ALTER TABLE` guarded by `PRAGMA table_info`. Nothing is
 ever dropped, and there is no `DELETE FROM messages` anywhere in the codebase.

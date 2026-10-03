@@ -488,21 +488,25 @@ const DEMO_DATA = (() => {
   })();
 
   // --- Plan usage (Claude.ai plan limits) ---
-  const planUsageData = {
-    planUsage: {
-      currentSession: {
-        percentUsed: 38,
-        resetsInSeconds: 3 * 3600 + 24 * 60
-      },
-      weeklyAllModels: {
-        percentUsed: 56,
-        resetsAt: new Date(Date.now() + 4 * 86400000).toISOString()
-      },
-      weeklySonnet: {
-        percentUsed: 41,
-        resetsAt: new Date(Date.now() + 4 * 86400000).toISOString()
-      },
-      fetchedAt: new Date(Date.now() - 90 * 1000).toISOString()
+  // Same shape as GET /api/claude-usage (lib/claude-usage.js createPoller().view()).
+  const claudeUsageData = {
+    enabled: true,
+    status: 'ok',
+    error: null,
+    fetchedAt: new Date(Date.now() - 90 * 1000).toISOString(),
+    intervalMinutes: 5,
+    data: {
+      source: 'limits',
+      limits: [
+        { id: 'session', kind: 'session', name: 'session', group: 'session', percentUsed: 38,
+          resetsAt: new Date(Date.now() + (3 * 60 + 24) * 60000).toISOString() },
+        { id: 'weekly_all', kind: 'weekly_all', name: 'weekly_all', group: 'weekly', percentUsed: 56,
+          resetsAt: new Date(Date.now() + 4 * 86400000).toISOString() },
+        { id: 'weekly_scoped:fable', kind: 'weekly_scoped', name: 'weekly_scoped', group: 'weekly', percentUsed: 41,
+          scopeLabel: 'Fable', resetsAt: new Date(Date.now() + 4 * 86400000).toISOString() }
+      ],
+      extraUsage: { enabled: false, used: 0, limit: 50, currency: 'EUR', percentUsed: 0, disabledReason: null },
+      breakdown: [{ key: 'claude_code', label: 'Claude Code', percent: 91 }, { key: 'chat', label: 'Chat', percent: 9 }]
     }
   };
 
@@ -1098,7 +1102,7 @@ const DEMO_DATA = (() => {
     'subagent-stats': subagentStatsData,
     'tool-cost-daily': toolCostDailyData,
     'rate-limits': rateLimitsData,
-    'plan-usage': planUsageData,
+    'claude-usage': claudeUsageData,
     'trends': trendsData,
     'github/stats': githubStatsData,
     'github/billing': githubBillingData,

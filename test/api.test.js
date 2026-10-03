@@ -683,9 +683,24 @@ describe('API endpoints', () => {
     it('degrades gracefully on the integrations when no credentials are set', async () => {
       // None of these may return a 5xx just because a token is missing — a
       // dashboard tab that 500s looks like the app is broken.
-      for (const route of ['/api/github/stats', '/api/anthropic/dashboard', '/api/plan-usage']) {
+      for (const route of ['/api/github/stats', '/api/anthropic/dashboard', '/api/claude-usage']) {
         const { status } = await get(route);
         expect(status).toBeLessThan(500);
+      }
+    });
+
+    it('keeps the Claude usage poller off under the test runner', async () => {
+      // It would otherwise call api.anthropic.com with the developer's real
+      // OAuth token from the keychain on every test run.
+      expect((await get('/api/claude-usage')).body).toEqual({ enabled: false });
+      expect((await post('/api/claude-usage/refresh')).body).toEqual({ enabled: false });
+    });
+
+    it('no longer serves the old plan-usage routes', async () => {
+      // The predecessor could store the OAuth token in the DB via POST /api/plan-usage/token.
+      for (const route of ['/api/plan-usage', '/api/plan-usage/token', '/api/plan-usage/refresh']) {
+        const { status } = await post(route);
+        expect(status).toBe(404);
       }
     });
 

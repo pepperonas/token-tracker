@@ -1062,75 +1062,199 @@ function initActiveSessionsCollapse() {
   });
 }
 
-async function loadPlanUsage() {
+// --- Claude subscription usage (session / weekly / extra usage) ----------
+// The server polls api.anthropic.com/api/oauth/usage (lib/claude-usage.js) and
+// this only reads its cache via /api/claude-usage, so reloading the page never
+// costs an upstream call. Local single-user only: { enabled: false } hides it.
+
+const USAGE_TZ = 'Europe/Berlin';
+let _claudeUsageView = null;
+
+/** Display name of one limit. Unknown kinds keep their raw name on purpose. */
+function usageLimitLabel(l) {
+  if (!l) return '';
+  if (l.kind === 'session') return t('usageSession');
+  if (l.kind === 'weekly_all') return t('usageWeeklyAll');
+  if (l.kind === 'weekly_scoped') return t('usageWeeklyScoped').replace('{x}', l.scopeLabel || '?');
+  return l.name || l.kind || '?';
+}
+
+/** 'warn' from 70 %, 'danger' from 90 %, '' otherwise. */
+function usageSeverity(pct) {
+  if (typeof pct !== 'number') return '';
+  return pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+}
+
+/** "in 4 Std. 38 Min." / "in 2 Tg. 3 Std." — null for a missing or past date. */
+function formatUsageRelative(iso, now = Date.now()) {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  const min = Math.round((ms - now) / 60000);
+  if (min <= 0) return t('usageResetNow');
+  const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+  const de = currentLang === 'de';
+  const U = de ? { d: ' Tg.', h: ' Std.', m: ' Min.' } : { d: 'd', h: 'h', m: 'm' };
+  const parts = d > 0 ? [d + U.d, h ? h + U.h : ''] : h > 0 ? [h + U.h, m ? m + U.m : ''] : [m + U.m];
+  return t('usageResetIn').replace('{0}', parts.filter(Boolean).join(' '));
+}
+
+/** Absolute reset time in Europe/Berlin, e.g. "Sa., 04.10., 06:00". */
+function formatUsageAbsolute(iso) {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  const lang = currentLang === 'de' ? 'de-DE' : 'en-GB';
+  return new Intl.DateTimeFormat(lang, {
+    timeZone: USAGE_TZ, weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  }).format(new Date(ms));
+}
+
+function _usageClock(iso) {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '';
+  return new Intl.DateTimeFormat(currentLang === 'de' ? 'de-DE' : 'en-GB', {
+    timeZone: USAGE_TZ, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  }).format(new Date(ms));
+}
+
+/** Reason text for an error code from the poller. */
+function usageErrorText(code) {
+  if (code === 'TOKEN_EXPIRED') return t('usageTokenExpired');
+  if (code === 'NO_TOKEN') return t('usageNoToken');
+  if (code === 'RATE_LIMITED') return t('usageRateLimited');
+  return t('usageFetchError').replace('{0}', code || '?');
+}
+
+/** One-line status for the header of the box ('' when everything is fresh). */
+function usageStatusText(view) {
+  if (!view || !view.enabled) return '';
+  if (view.status === 'loading') return t('usageLoading');
+  if (view.status === 'ok') return '';
+  const reason = view.error ? usageErrorText(view.error) : '';
+  if (view.status === 'stale') {
+    const stand = t('usageAsOf').replace('{0}', _usageClock(view.fetchedAt));
+    return reason ? stand + ' · ' + reason : stand;
+  }
+  return reason;
+}
+
+function _usageBarRow(pct) {
+  const row = document.createElement('div');
+  row.className = 'plan-usage-bar-row';
+  const track = document.createElement('div');
+  track.className = 'plan-usage-bar-container';
+  const bar = document.createElement('div');
+  const sev = usageSeverity(pct);
+  bar.className = 'plan-usage-bar' + (sev ? ' ' + sev : '');
+  bar.style.width = (typeof pct === 'number' ? Math.max(0, Math.min(pct, 100)) : 0) + '%';
+  track.appendChild(bar);
+  const pctEl = document.createElement('div');
+  pctEl.className = 'plan-usage-pct';
+  pctEl.textContent = typeof pct === 'number'
+    ? (Math.round(pct * 10) / 10).toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-US') + ' % ' + t('planUsed')
+    : '—';
+  row.append(track, pctEl);
+  return row;
+}
+
+function renderClaudeUsage(view, now = Date.now()) {
   const section = document.getElementById('plan-usage-section');
-  if (!section) return;
+  const chip = document.getElementById('usage-chip');
+  const enabled = !!(view && view.enabled);
+  if (section) section.style.display = enabled ? '' : 'none';
+  if (chip) chip.style.display = enabled ? '' : 'none';
+  if (!enabled) return;
+
+  const data = view.data;
+  const limits = (data && Array.isArray(data.limits)) ? data.limits : [];
+
+  const statusEl = document.getElementById('plan-usage-status');
+  if (statusEl) {
+    statusEl.textContent = usageStatusText(view);
+    statusEl.className = 'plan-usage-status' + (view.status === 'error' ? ' error' : view.status === 'stale' ? ' stale' : '');
+  }
+
+  const list = document.getElementById('plan-usage-list');
+  if (list) {
+    list.textContent = '';
+    for (const l of limits) {
+      const item = document.createElement('div');
+      item.className = 'plan-usage-item';
+      const label = document.createElement('div');
+      label.className = 'plan-usage-label';
+      label.textContent = usageLimitLabel(l);
+      const meta = document.createElement('div');
+      meta.className = 'plan-usage-meta';
+      const rel = formatUsageRelative(l.resetsAt, now);
+      const abs = formatUsageAbsolute(l.resetsAt);
+      const bits = [];
+      if (rel) bits.push(rel);
+      if (abs) bits.push(abs);
+      if (l.dollars && typeof l.dollars.used === 'number' && typeof l.dollars.limit === 'number') {
+        bits.push('$' + l.dollars.used.toFixed(2) + ' / $' + l.dollars.limit.toFixed(2));
+      }
+      meta.textContent = bits.join(' · ');
+      if (l.resetsAt) meta.title = l.resetsAt;
+      item.append(label, meta, _usageBarRow(l.percentUsed));
+      list.appendChild(item);
+    }
+    if (limits.length === 0 && data) {
+      const empty = document.createElement('div');
+      empty.className = 'plan-usage-meta';
+      empty.textContent = t('usageNoLimits');
+      list.appendChild(empty);
+    }
+  }
+
+  const extra = document.getElementById('plan-usage-extra');
+  if (extra) {
+    extra.textContent = '';
+    const bits = [];
+    const x = data && data.extraUsage;
+    if (x && typeof x.limit === 'number') {
+      const money = (v) => (typeof v === 'number' ? v.toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '?') + ' ' + (x.currency || '');
+      bits.push(t('usageExtra') + ': ' + money(x.used) + ' / ' + money(x.limit) + (x.enabled ? '' : ' (' + t('usageExtraOff') + ')'));
+    }
+    const br = data && Array.isArray(data.breakdown) ? data.breakdown : [];
+    if (br.length) {
+      bits.push(t('usageBreakdown') + ': ' + br.filter(r => r.percent > 0)
+        .map(r => (r.label || r.key) + ' ' + r.percent + ' %').join(', '));
+    }
+    extra.textContent = bits.join(' · ');
+    extra.style.display = bits.length ? '' : 'none';
+  }
+
+  const ageEl = document.getElementById('plan-usage-age');
+  if (ageEl) ageEl.textContent = view.fetchedAt ? t('usageAsOf').replace('{0}', _usageClock(view.fetchedAt)) : '';
+
+  // Header chip: the session limit, visible on every tab.
+  if (chip) {
+    const session = limits.find(l => l.kind === 'session');
+    const pct = session && typeof session.percentUsed === 'number' ? session.percentUsed : null;
+    const fill = document.getElementById('usage-chip-fill');
+    const pctEl = document.getElementById('usage-chip-pct');
+    if (fill) {
+      fill.style.width = (pct === null ? 0 : Math.min(pct, 100)) + '%';
+      const sev = usageSeverity(pct);
+      fill.className = 'usage-chip-fill' + (sev ? ' ' + sev : '');
+    }
+    if (pctEl) pctEl.textContent = pct === null ? '—' : Math.round(pct) + ' %';
+    chip.classList.toggle('stale', view.status !== 'ok');
+    const tip = [t('usageSession') + ': ' + (pct === null ? '—' : Math.round(pct) + ' %')];
+    if (session) { const rel = formatUsageRelative(session.resetsAt, now); if (rel) tip.push(rel); }
+    const st = usageStatusText(view);
+    if (st) tip.push(st);
+    chip.title = tip.join(' · ');
+  }
+}
+
+// Name kept: loadOverview()'s side loads call it.
+async function loadPlanUsage() {
   try {
-    const res = await api('plan-usage');
-    if (!res || !res.planUsage) {
-      section.style.display = 'none';
-      return;
-    }
-    section.style.display = '';
-    const pu = res.planUsage;
-
-    _renderUsageBar('plan-session', pu.currentSession?.percentUsed,
-      _formatResetSeconds(pu.currentSession?.resetsInSeconds));
-    _renderUsageBar('plan-weekly-all', pu.weeklyAllModels?.percentUsed,
-      _formatResetDate(pu.weeklyAllModels?.resetsAt));
-    _renderUsageBar('plan-weekly-sonnet', pu.weeklySonnet?.percentUsed,
-      _formatResetDate(pu.weeklySonnet?.resetsAt));
-
-    const ageEl = document.getElementById('plan-usage-age');
-    if (pu.fetchedAt) {
-      const ageMin = Math.round((Date.now() - new Date(pu.fetchedAt).getTime()) / 60000);
-      ageEl.textContent = t('planUpdatedAgo').replace('{0}', ageMin < 1 ? '< 1' : String(ageMin));
-    }
-
-    if (res.error === 'TOKEN_EXPIRED') {
-      const err = document.createElement('div');
-      err.className = 'plan-usage-error';
-      err.textContent = t('planTokenExpired');
-      section.querySelector('.plan-usage-grid').appendChild(err);
-    }
+    _claudeUsageView = await api('claude-usage');
   } catch {
-    section.style.display = 'none';
+    _claudeUsageView = null;
   }
-}
-
-function _renderUsageBar(prefix, pct, resetText) {
-  const bar = document.getElementById(prefix + '-bar');
-  const pctEl = document.getElementById(prefix + '-pct');
-  const resetEl = document.getElementById(prefix + '-reset');
-  if (!bar || !pctEl) return;
-
-  if (pct == null) {
-    pctEl.textContent = '\u2014';
-    bar.style.width = '0%';
-    bar.className = 'plan-usage-bar';
-    return;
-  }
-
-  pctEl.textContent = pct + ' % ' + t('planUsed');
-  bar.style.width = Math.min(pct, 100) + '%';
-  bar.className = 'plan-usage-bar' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
-  if (resetEl && resetText) resetEl.textContent = resetText;
-}
-
-function _formatResetSeconds(seconds) {
-  if (!seconds && seconds !== 0) return '';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return t('planResetIn').replace('{h}', h).replace('{m}', m);
-}
-
-function _formatResetDate(isoStr) {
-  if (!isoStr) return '';
-  const d = new Date(isoStr);
-  const lang = currentLang === 'de' ? 'de-DE' : 'en-US';
-  const day = d.toLocaleDateString(lang, { weekday: 'short' });
-  const time = d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
-  return t('planResetAt').replace('{day}', day).replace('{time}', time);
+  renderClaudeUsage(_claudeUsageView);
 }
 
 function _formatActiveTime(minutes) {
@@ -4488,11 +4612,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.disabled = true;
     btn.textContent = '...';
     try {
-      await fetch('/api/plan-usage/refresh', { method: 'POST' });
-      await loadPlanUsage();
-    } catch { /* ignore */ }
+      if (!state.demoMode) {
+        const res = await fetch('/api/claude-usage/refresh', { method: 'POST' });
+        const view = await res.json();
+        if (view && view.enabled) _claudeUsageView = view;
+        renderClaudeUsage(_claudeUsageView);
+        if (view && view.throttled) {
+          const st = document.getElementById('plan-usage-status');
+          if (st && !st.textContent) st.textContent = t('usageThrottled');
+        }
+      } else {
+        await loadPlanUsage();
+      }
+    } catch { /* keep showing the last state */ }
     btn.disabled = false;
     btn.textContent = t('caRefresh');
+  });
+  // The header chip is on every tab: keep it (and the relative reset times)
+  // current. Reads the server cache only — no upstream call.
+  const tickUsage = () => {
+    // Signed-out multi-user visitors must not hit an auth-gated route (api()
+    // would raise the login overlay); demo mode serves DEMO_DATA instead.
+    if (state.multiUser && !state.user && !state.demoMode) return;
+    loadPlanUsage();
+  };
+  setTimeout(tickUsage, 1500);   // the chip should not wait for the first minute
+  setInterval(tickUsage, 60 * 1000);
+  document.getElementById('usage-chip')?.addEventListener('click', () => {
+    switchTab('overview');
+    setTimeout(() => document.getElementById('plan-usage-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
   });
   document.getElementById('export-html-btn')?.addEventListener('click', exportHtml);
   document.getElementById('logout-btn')?.addEventListener('click', logout);

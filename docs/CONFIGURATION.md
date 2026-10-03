@@ -88,6 +88,20 @@ GitHub API never blocks the dashboard.
 
 ---
 
+## Claude subscription usage
+
+| Variable | Default | Description |
+|---|---|---|
+| `CLAUDE_USAGE_ENABLED` | `true` | Set to `false` to switch the usage limits off. Always off in multi-user mode. |
+| `CLAUDE_USAGE_POLL_MINUTES` | `5` | Minutes between fetches of the usage limits. Values below `2` are raised to `2` — the endpoint rate-limits aggressively. |
+
+The token is read from the macOS keychain (service `Claude Code-credentials`)
+or `~/.claude/.credentials.json` on every fetch. There is deliberately **no**
+setting for a token: it must never be stored. An expired token is reported as
+"start Claude Code once" — Claude Code refreshes it, the tracker does not.
+
+---
+
 ## Claude API tab
 
 | Variable | Default | Description |

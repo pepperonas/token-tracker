@@ -4,6 +4,44 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.6.0] — 2026-10-04
+
+### Added
+
+- **Claude-Abo-Nutzungslimits** — die Werte, die Claude Code unter `/usage`
+  zeigt: aktuelle Sitzung, Woche (alle Modelle), Woche je Modell, dazu
+  Extra-Usage und die Aufteilung der Woche nach Bereich. Ausführliche Box oben
+  in der Übersicht und ein Chip mit dem Sitzungs-Prozent in der Kopfzeile, in
+  jedem Tab sichtbar. Je Limit: Balken, Prozent, Reset relativ und absolut in
+  Europe/Berlin; Zustände „lädt“, „veraltet (Stand: …)“ und „Fehler“
+- Quelle ist der undokumentierte Endpoint `api.anthropic.com/api/oauth/usage`
+  mit dem OAuth-Token von Claude Code. Das Schema ist aus **einer echten
+  Antwort** abgeleitet (`docs/usage-api-sample.json`, Kennungen maskiert),
+  nicht aus Annahmen. Unbekannte Limit-Arten bleiben mit Rohnamen sichtbar,
+  ein kaputtes Limit kippt die anderen nicht
+- Ein Abruf durch den Server alle 5 Minuten (`CLAUDE_USAGE_POLL_MINUTES`,
+  mindestens 2), bei 429 exponentielles Zurückweichen bis 60 Minuten; die
+  Oberfläche liest nur den Zwischenspeicher
+
+### Sicherheit
+
+- **Der Token wird bei jedem Abruf frisch aus der Keychain gelesen und nie
+  gespeichert, geloggt oder zurückgeschrieben.** Es gibt bewusst keinen
+  eigenen Refresh — ein abgelaufener Token heißt „Claude Code einmal starten“.
+  Ein Test durchsucht alle versionierten Dateien nach echten Schlüsseln
+- Nur im lokalen Einzelnutzer-Modus; auf tracker.celox.io bleibt alles aus,
+  ebenso unter dem Testrunner (er würde sonst mit dem echten Token abfragen)
+
+### Removed
+
+- `lib/plan-usage.js` und die Routen `/api/plan-usage*`: der Vorgänger fragte
+  einen claude.ai-Endpoint ab, der mit diesem Token nie antwortete, und konnte
+  den OAuth-Token **verschlüsselt in der Datenbank speichern**
+  (`POST /api/plan-usage/token`). Beim Start werden alle alten
+  `plan_usage*`-Einträge gelöscht
+- Der Sync-Agent fragt keine Plan-Nutzung mehr ab; ältere Agents, die noch
+  `planUsage` mitschicken, werden weiter angenommen
+
 ## [0.5.0] — 2026-10-01
 
 ### Added

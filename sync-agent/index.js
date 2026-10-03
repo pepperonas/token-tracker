@@ -24,7 +24,6 @@ const ANTIGRAVITY_SUMMARIES_DB = path.join(ANTIGRAVITY_DIR, 'conversation_summar
 
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 const STATE_PATH = path.join(__dirname, '.sync-state.json');
-const PLAN_USAGE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 // --- Helper functions ---
 
@@ -568,149 +567,9 @@ function loadConfig() {
   }
 }
 
-// --- Plan Usage (OAuth token detection + claude.ai API) ---
-
-let _planUsageCache = null;
-let _planUsageFetchedAt = 0;
-let _orgId = null;
-
-function _getOAuthTokenFromKeychain() {
-  if (os.platform() !== 'darwin') return null;
-  try {
-    const raw = execFileSync('security', [
-      'find-generic-password', '-s', 'Claude Code-credentials', '-w'
-    ], { encoding: 'utf8', timeout: 5000, stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-    const parsed = JSON.parse(raw);
-    return (parsed.claudeAiOauth && parsed.claudeAiOauth.accessToken) || null;
-  } catch {
-    return null;
-  }
-}
-
-function _getOAuthTokenFromFile() {
-  let credPath;
-  if (os.platform() === 'win32') {
-    credPath = path.join(process.env.APPDATA || '', 'Claude', 'credentials.json');
-  } else {
-    credPath = path.join(HOME, '.config', 'claude', 'credentials.json');
-  }
-  try {
-    const data = JSON.parse(fs.readFileSync(credPath, 'utf8'));
-    return (data.claudeAiOauth && data.claudeAiOauth.accessToken) || data.accessToken || null;
-  } catch {
-    return null;
-  }
-}
-
-function getOAuthToken() {
-  return _getOAuthTokenFromKeychain() || _getOAuthTokenFromFile() || null;
-}
-
-function _apiGet(url, token) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(url);
-    const req = https.request({
-      hostname: parsed.hostname,
-      path: parsed.pathname + parsed.search,
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'User-Agent': 'claude-code/1.0',
-        'anthropic-client-platform': 'claude-code',
-        'Content-Type': 'application/json'
-      }
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode === 401 || res.statusCode === 403) {
-          return reject(new Error('TOKEN_EXPIRED'));
-        }
-        if (res.statusCode !== 200) {
-          return reject(new Error(`HTTP ${res.statusCode}: ${data.substring(0, 200)}`));
-        }
-        try { resolve(JSON.parse(data)); } catch { reject(new Error('Invalid JSON')); }
-      });
-    });
-    req.on('error', reject);
-    req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
-    req.end();
-  });
-}
-
-async function _getOrgId(token) {
-  if (_orgId) return _orgId;
-  const data = await _apiGet('https://claude.ai/api/bootstrap', token);
-  if (data.account && data.account.memberships) {
-    for (const m of data.account.memberships) {
-      if (m.organization && m.organization.uuid) {
-        _orgId = m.organization.uuid;
-        return _orgId;
-      }
-    }
-  }
-  if (data.organizations && data.organizations.length > 0) {
-    _orgId = data.organizations[0].uuid || data.organizations[0].id;
-    return _orgId;
-  }
-  throw new Error('Could not find organization ID');
-}
-
-async function fetchPlanUsage() {
-  const token = getOAuthToken();
-  if (!token) return null;
-
-  if (_planUsageCache && (Date.now() - _planUsageFetchedAt) < PLAN_USAGE_INTERVAL_MS) {
-    return _planUsageCache;
-  }
-
-  try {
-    const orgId = await _getOrgId(token);
-    const raw = await _apiGet(`https://claude.ai/api/organizations/${orgId}/usage`, token);
-
-    const result = {};
-    if (raw.current_session || raw.currentSession) {
-      const cs = raw.current_session || raw.currentSession;
-      result.currentSession = {
-        percentUsed: cs.percent_used ?? cs.percentUsed ?? null,
-        resetsInSeconds: cs.resets_in_seconds ?? cs.resetsInSeconds ?? null,
-        expiresAt: cs.expires_at ?? cs.expiresAt ?? null
-      };
-    }
-    if (raw.weekly_limits || raw.weeklyLimits) {
-      const wl = raw.weekly_limits || raw.weeklyLimits;
-      if (wl.all_models || wl.allModels) {
-        const am = wl.all_models || wl.allModels;
-        result.weeklyAllModels = {
-          percentUsed: am.percent_used ?? am.percentUsed ?? null,
-          resetsAt: am.resets_at ?? am.resetsAt ?? null
-        };
-      }
-      if (wl.sonnet_only || wl.sonnetOnly) {
-        const so = wl.sonnet_only || wl.sonnetOnly;
-        result.weeklySonnet = {
-          percentUsed: so.percent_used ?? so.percentUsed ?? null,
-          resetsAt: so.resets_at ?? so.resetsAt ?? null
-        };
-      }
-    }
-    result.fetchedAt = new Date().toISOString();
-    _planUsageCache = result;
-    _planUsageFetchedAt = Date.now();
-    return result;
-  } catch (err) {
-    if (_planUsageCache) return _planUsageCache;
-    if (!fetchPlanUsage._errorLogged) {
-      console.error(`Plan usage fetch error: ${err.message} (suppressing further)`);
-      fetchPlanUsage._errorLogged = true;
-    }
-    return null;
-  }
-}
-
 // --- HTTP request helper ---
 
-function sendBatch(serverUrl, apiKey, messages, rateLimitEvents, planUsage) {
+function sendBatch(serverUrl, apiKey, messages, rateLimitEvents) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(serverUrl + '/api/sync');
     const isHttps = urlObj.protocol === 'https:';
@@ -719,9 +578,6 @@ function sendBatch(serverUrl, apiKey, messages, rateLimitEvents, planUsage) {
     const payload = { messages };
     if (rateLimitEvents && rateLimitEvents.length > 0) {
       payload.rateLimitEvents = rateLimitEvents;
-    }
-    if (planUsage) {
-      payload.planUsage = planUsage;
     }
     const body = JSON.stringify(payload);
 
@@ -761,10 +617,10 @@ function sendBatch(serverUrl, apiKey, messages, rateLimitEvents, planUsage) {
   });
 }
 
-async function sendWithRetry(serverUrl, apiKey, messages, rateLimitEvents, planUsage, maxRetries = 3) {
+async function sendWithRetry(serverUrl, apiKey, messages, rateLimitEvents, maxRetries = 3) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await sendBatch(serverUrl, apiKey, messages, rateLimitEvents, planUsage);
+      return await sendBatch(serverUrl, apiKey, messages, rateLimitEvents);
     } catch (err) {
       if (attempt === maxRetries - 1) throw err;
       const delay = Math.pow(2, attempt) * 1000;
@@ -834,7 +690,7 @@ async function backfillRateLimitEvents(config) {
   if (allEvents.length > 0) {
     for (let i = 0; i < allEvents.length; i += 500) {
       const batch = allEvents.slice(i, i + 500);
-      await sendWithRetry(config.serverUrl, config.apiKey, [], batch, null);
+      await sendWithRetry(config.serverUrl, config.apiKey, [], batch);
     }
     console.log(`Backfilled ${allEvents.length} rate-limit events from existing JSONL files`);
   }
@@ -845,7 +701,6 @@ async function backfillRateLimitEvents(config) {
 async function fullSync(config) {
   const state = loadState();
   let totalSent = 0;
-  let planUsageSent = false;
 
   // 1. One-time backfill for rate-limit events from already-parsed Claude files
   if (!state._rateLimitBackfillDone) {
@@ -854,9 +709,6 @@ async function fullSync(config) {
     saveState(state);
   }
 
-  // 2. Fetch plan usage to include in sync
-  const planUsage = await fetchPlanUsage();
-
   // Helper to push messages in 500 batches
   async function pushMessages(messages, rateLimitEvents = []) {
     if (!messages.length && !rateLimitEvents.length) return;
@@ -864,16 +716,12 @@ async function fullSync(config) {
       for (let i = 0; i < messages.length; i += 500) {
         const batch = messages.slice(i, i + 500);
         const rle = (i === 0) ? rateLimitEvents : [];
-        const pu = (!planUsageSent && i === 0) ? planUsage : null;
-        const result = await sendWithRetry(config.serverUrl, config.apiKey, batch, rle, pu);
-        if (pu) planUsageSent = true;
+        const result = await sendWithRetry(config.serverUrl, config.apiKey, batch, rle);
         totalSent += (result && result.inserted) || batch.length;
         process.stdout.write(`  Synced ${totalSent} messages...\r`);
       }
     } else if (rateLimitEvents.length > 0) {
-      const pu = !planUsageSent ? planUsage : null;
-      await sendWithRetry(config.serverUrl, config.apiKey, [], rateLimitEvents, pu);
-      if (pu) planUsageSent = true;
+      await sendWithRetry(config.serverUrl, config.apiKey, [], rateLimitEvents);
     }
   }
 
@@ -916,13 +764,6 @@ async function fullSync(config) {
     }
   }
 
-  // If no files had changes but we have plan usage, send it standalone
-  if (!planUsageSent && planUsage) {
-    await sendWithRetry(config.serverUrl, config.apiKey, [], [], planUsage);
-    planUsageSent = true;
-    console.log('Synced plan usage data');
-  }
-
   saveState(state);
   return totalSent;
 }
@@ -960,7 +801,6 @@ async function watch(config) {
   });
 
   let lastSyncTs = Date.now();
-  let planUsageErrorLogged = false;
 
   const processFile = async (filePath) => {
     try {
@@ -995,13 +835,11 @@ async function watch(config) {
       }
 
       if (messages.length > 0 || rateLimitEvents.length > 0) {
-        const planUsage = await fetchPlanUsage().catch(() => null);
-        await sendWithRetry(config.serverUrl, config.apiKey, messages, rateLimitEvents, planUsage);
+        await sendWithRetry(config.serverUrl, config.apiKey, messages, rateLimitEvents);
         lastSyncTs = Date.now();
         const parts = [];
         if (messages.length > 0) parts.push(`${messages.length} messages`);
         if (rateLimitEvents.length > 0) parts.push(`${rateLimitEvents.length} rate-limit events`);
-        if (planUsage) parts.push('plan usage');
         console.log(`[${new Date().toTimeString().slice(0, 8)}] Synced ${parts.join(', ')} from ${path.basename(filePath)}`);
       }
 
@@ -1020,22 +858,6 @@ async function watch(config) {
     console.log('File watcher ready.');
   });
 
-  // Periodic plan usage sync (every 5 min, even without file changes)
-  const planUsageTimer = setInterval(async () => {
-    try {
-      const planUsage = await fetchPlanUsage();
-      if (planUsage) {
-        await sendWithRetry(config.serverUrl, config.apiKey, [], [], planUsage);
-        console.log(`[${new Date().toTimeString().slice(0, 8)}] Synced plan usage`);
-      }
-    } catch (err) {
-      if (!planUsageErrorLogged) {
-        console.error(`Plan usage sync error: ${err.message} (suppressing further)`);
-        planUsageErrorLogged = true;
-      }
-    }
-  }, PLAN_USAGE_INTERVAL_MS);
-
   // Heartbeat every 30 min — shows agent is alive
   const heartbeatTimer = setInterval(() => {
     const ago = Math.round((Date.now() - lastSyncTs) / 60000);
@@ -1050,7 +872,6 @@ async function watch(config) {
   // Keep alive
   process.on('SIGINT', () => {
     console.log('\nStopping sync agent...');
-    clearInterval(planUsageTimer);
     clearInterval(heartbeatTimer);
     watcher.close();
     saveState(state);

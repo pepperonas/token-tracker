@@ -33,7 +33,7 @@ const Watcher = require('./lib/watcher');
 const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./lib/auth');
 const github = require('./lib/github');
 const anthropicApi = require('./lib/anthropic-api');
-const planUsage = require('./lib/plan-usage');
+const claudeUsage = require('./lib/claude-usage');
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
@@ -80,8 +80,22 @@ github.initGithub(require('./lib/db'));
 // 1c. Initialize Anthropic API module with DB reference
 anthropicApi.initAnthropicApi(require('./lib/db'));
 
-// 1d. Initialize Plan Usage module with DB reference
-planUsage.initPlanUsage(require('./lib/db'));
+// 1d. Claude subscription usage limits (session / weekly / extra usage).
+// Local single-user only: it reads THIS machine's Claude Code OAuth token, so
+// on a hosted multi-user instance it would show the operator's account to
+// everyone. Never polls under the test runner (it would hit the real
+// endpoint with the developer's real token). The poller starts with the
+// server in startServer().
+const CLAUDE_USAGE_ENABLED = !MULTI_USER
+  && process.env.NODE_ENV !== 'test'
+  && process.env.CLAUDE_USAGE_ENABLED !== 'false';
+const usagePoller = CLAUDE_USAGE_ENABLED ? claudeUsage.createDefaultPoller(require('./lib/db')) : null;
+// The predecessor (lib/plan-usage.js) could store the OAuth token encrypted in
+// the metadata table and cached results under plan_usage_*. Neither may
+// outlive it — the token must never be persisted.
+try {
+  require('./lib/db').getDB().prepare("DELETE FROM metadata WHERE key LIKE 'plan\\_usage%' ESCAPE '\\'").run();
+} catch { /* metadata table absent on a brand-new DB */ }
 
 // 1e. Initialize Pricing module — loads cached overrides synchronously, then
 // fetches fresh prices from LiteLLM in the background and schedules a 24h refresh.
@@ -693,6 +707,8 @@ const server = http.createServer((req, res) => {
       const hasMessages = Array.isArray(messages) && messages.length > 0;
       const hasRateLimitEvents = Array.isArray(rateLimitEvents) && rateLimitEvents.length > 0;
 
+      // Older sync agents still attach `planUsage`. It is accepted and dropped
+      // (the feature is local-only now) so those agents keep syncing.
       const hasPlanUsage = !!body.planUsage;
       if (!hasMessages && !hasRateLimitEvents && !hasPlanUsage) {
         return sendJSON(res, { error: 'No data provided' }, 400);
@@ -704,11 +720,6 @@ const server = http.createServer((req, res) => {
 
       if (hasRateLimitEvents) {
         insertRateLimitEventsForUser(rateLimitEvents, syncUser.id, deviceId);
-      }
-
-      // Store plan usage data if provided (backwards-compatible)
-      if (body.planUsage) {
-        planUsage.storeSyncedPlanUsage(syncUser.id, body.planUsage);
       }
 
       // Update device last sync time
@@ -1712,50 +1723,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Plan Usage endpoints
-  if (pathname === '/api/plan-usage' && req.method === 'GET') {
-    planUsage.getPlanUsage(user).then(data => {
-      sendJSON(res, { planUsage: data, hasToken: planUsage.hasOAuthToken(user) });
-    }).catch(err => {
-      const isExpired = err.message === 'TOKEN_EXPIRED';
-      sendJSON(res, {
-        planUsage: null,
-        hasToken: planUsage.hasOAuthToken(user),
-        error: isExpired ? 'TOKEN_EXPIRED' : err.message
-      }, isExpired ? 200 : 200);
-    });
-    return;
+  // Claude subscription usage — reads the poller's cache only; never calls
+  // the upstream endpoint per page view.
+  if (pathname === '/api/claude-usage' && req.method === 'GET') {
+    return sendJSON(res, usagePoller ? usagePoller.view() : { enabled: false });
   }
 
-  if (pathname === '/api/plan-usage/token' && req.method === 'POST') {
-    readBody(req).then(body => {
-      const token = (body.token || '').trim();
-      if (!token.startsWith('sk-ant-oat01-')) {
-        return sendJSON(res, { error: 'Invalid token format — must start with sk-ant-oat01-' }, 400);
-      }
-      const uid = MULTI_USER ? user.id : 0;
-      planUsage.saveOAuthToken(uid, token);
-      planUsage.clearCache(uid);
-      return sendJSON(res, { saved: true });
-    }).catch(err => sendJSON(res, { error: err.message }, 400));
-    return;
-  }
-
-  if (pathname === '/api/plan-usage/token' && req.method === 'DELETE') {
-    const uid = MULTI_USER ? user.id : 0;
-    planUsage.deleteOAuthToken(uid);
-    planUsage.clearCache(uid);
-    return sendJSON(res, { deleted: true });
-  }
-
-  if (pathname === '/api/plan-usage/refresh' && req.method === 'POST') {
-    const uid = MULTI_USER ? user.id : 0;
-    planUsage.clearCache(uid);
-    planUsage.getPlanUsage(user).then(data => {
-      sendJSON(res, { planUsage: data });
-    }).catch(err => {
-      sendJSON(res, { planUsage: null, error: err.message });
-    });
+  // Manual refresh: allowed at most every 2 minutes and never during a 429
+  // backoff; otherwise answers with the cached view and throttled: true.
+  if (pathname === '/api/claude-usage/refresh' && req.method === 'POST') {
+    if (!usagePoller) return sendJSON(res, { enabled: false });
+    usagePoller.refresh()
+      .then(r => sendJSON(res, { ...r.view, throttled: r.throttled }))
+      .catch(() => sendJSON(res, { ...usagePoller.view(), throttled: false }));
     return;
   }
 
@@ -1854,6 +1834,7 @@ function startServer(port) {
   const p = port || PORT;
   return new Promise((resolve) => {
     server.listen(p, () => {
+      if (usagePoller) usagePoller.start();
       console.log(`Dashboard: http://localhost:${p}`);
       console.log(`API: http://localhost:${p}/api/overview`);
       // One-shot full GC shortly after bootstrap: the startup load/parse churns

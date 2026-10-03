@@ -1,0 +1,95 @@
+const fs = require('fs');
+const path = require('path');
+const { loadFrontend } = require('./helpers/frontend');
+const { parseUsage } = require('../lib/claude-usage');
+
+const SAMPLE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'docs', 'usage-api-sample.json'), 'utf8')).body;
+
+describe('claude usage — frontend helpers', () => {
+  let F;
+  beforeAll(() => { F = loadFrontend(); });
+  afterEach(() => F.setLang('de'));
+
+  it('names known kinds and keeps unknown ones raw', () => {
+    F.setLang('de');
+    expect(F.usageLimitLabel({ kind: 'session' })).toBe('Aktuelle Sitzung');
+    expect(F.usageLimitLabel({ kind: 'weekly_all' })).toBe('Woche · alle Modelle');
+    expect(F.usageLimitLabel({ kind: 'weekly_scoped', scopeLabel: 'Fable' })).toBe('Woche · Fable');
+    expect(F.usageLimitLabel({ kind: 'other', name: 'iguana_necktie' })).toBe('iguana_necktie');
+    expect(F.usageLimitLabel({ kind: 'monthly_mystery', name: 'monthly_mystery' })).toBe('monthly_mystery');
+  });
+
+  it('labels every limit of the real sample without falling back to "?"', () => {
+    for (const l of parseUsage(SAMPLE).limits) {
+      expect(F.usageLimitLabel(l)).toBeTruthy();
+    }
+  });
+
+  it('formats the reset relative to now', () => {
+    F.setLang('de');
+    const now = Date.parse('2026-10-04T01:22:00Z');
+    expect(F.formatUsageRelative('2026-10-04T04:00:00Z', now)).toBe('Reset in 2 Std. 38 Min.');
+    expect(F.formatUsageRelative('2026-10-10T23:00:00Z', now)).toBe('Reset in 6 Tg. 21 Std.');
+    expect(F.formatUsageRelative('2026-10-04T01:30:00Z', now)).toBe('Reset in 8 Min.');
+    expect(F.formatUsageRelative('2026-10-04T01:00:00Z', now)).toBe('Reset läuft');
+    expect(F.formatUsageRelative(null, now)).toBeNull();
+    F.setLang('en');
+    expect(F.formatUsageRelative('2026-10-04T04:00:00Z', now)).toBe('resets in 2h 38m');
+  });
+
+  it('shows the absolute reset in Europe/Berlin, not in the machine zone', () => {
+    F.setLang('de');
+    // 04:00 UTC on 4 Oct = 06:00 CEST; 23:00 UTC on 31 Oct = 00:00 CET on 1 Nov.
+    expect(F.formatUsageAbsolute('2026-10-04T04:00:00.046105+00:00')).toMatch(/04\.10\..*06:00/);
+    expect(F.formatUsageAbsolute('2026-10-31T23:00:00Z')).toMatch(/01\.11\..*00:00/);
+    expect(F.formatUsageAbsolute('garbage')).toBeNull();
+  });
+
+  it('grades severity at 70 and 90 percent', () => {
+    expect(F.usageSeverity(69.9)).toBe('');
+    expect(F.usageSeverity(70)).toBe('warn');
+    expect(F.usageSeverity(99.66)).toBe('danger');
+    expect(F.usageSeverity(null)).toBe('');
+  });
+
+  it('describes loading, stale and error states', () => {
+    F.setLang('de');
+    expect(F.usageStatusText({ enabled: true, status: 'ok' })).toBe('');
+    expect(F.usageStatusText({ enabled: true, status: 'loading' })).toBe('Lädt…');
+    expect(F.usageStatusText({ enabled: true, status: 'error', error: 'TOKEN_EXPIRED' }))
+      .toBe('Token abgelaufen, Claude Code einmal starten');
+    const stale = F.usageStatusText({ enabled: true, status: 'stale', error: 'RATE_LIMITED', fetchedAt: '2026-10-04T08:15:00Z' });
+    expect(stale).toMatch(/^Stand: .*10:15 · Abfragelimit erreicht/);
+    expect(F.usageStatusText({ enabled: false })).toBe('');
+  });
+
+  it('has German and English texts for every usage key', () => {
+    const { LANG } = F.pick(['LANG']);
+    const keys = Object.keys(LANG.de).filter(k => k.startsWith('usage'));
+    expect(keys.length).toBeGreaterThanOrEqual(17);
+    for (const k of keys) expect(LANG.en[k]).toBeTruthy();
+  });
+});
+
+describe('claude usage — markup and wiring', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
+
+  it('has the containers the renderer writes into', () => {
+    for (const id of ['plan-usage-section', 'plan-usage-list', 'plan-usage-status', 'plan-usage-extra', 'plan-usage-age',
+      'plan-usage-refresh', 'usage-chip', 'usage-chip-fill', 'usage-chip-pct']) {
+      expect(html).toContain(`id="${id}"`);
+    }
+  });
+
+  it('starts hidden — shown only once the server says it is enabled', () => {
+    expect(html).toMatch(/id="plan-usage-section"[^>]*display:none/);
+    expect(html).toMatch(/id="usage-chip"[^>]*display:none/);
+  });
+
+  it('talks to the new routes only', () => {
+    expect(app).toContain("api('claude-usage')");
+    expect(app).toContain("'/api/claude-usage/refresh'");
+    expect(app).not.toContain('/api/plan-usage');
+  });
+});

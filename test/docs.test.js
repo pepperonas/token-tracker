@@ -51,7 +51,7 @@ describe('documentation stays in sync with the code', () => {
 
   it('documents every environment variable the code reads', () => {
     const sources = ['server.js', 'lib/config.js', 'lib/github.js', 'lib/anthropic-api.js',
-      'lib/auth.js', 'lib/plan-usage.js', 'lib/pricing-fetcher.js'].map(read).join('\n');
+      'lib/auth.js', 'lib/claude-usage.js', 'lib/pricing-fetcher.js'].map(read).join('\n');
     // HOME/APPDATA are OS-provided, not settings.
     const ignored = new Set(['HOME', 'APPDATA', 'NODE_ENV']);
     const used = [...new Set((sources.match(/process\.env\.([A-Z_]+)/g) || [])
