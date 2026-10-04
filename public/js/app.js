@@ -1068,7 +1068,6 @@ function initActiveSessionsCollapse() {
 // costs an upstream call. Local single-user only: { enabled: false } hides it.
 
 const USAGE_TZ = 'Europe/Berlin';
-let _claudeUsageView = null;
 
 /** Display name of one limit. Unknown kinds keep their raw name on purpose. */
 function usageLimitLabel(l) {
@@ -1137,7 +1136,82 @@ function usageStatusText(view) {
   return reason;
 }
 
-function _usageBarRow(pct) {
+const USAGE_PROVIDERS = ['claude', 'codex', 'antigravity'];
+const USAGE_PROVIDER_NAMES = { claude: 'Claude', codex: 'Codex', antigravity: 'Antigravity' };
+let _usageLimits = null;
+
+/** Label of one limit, per provider. Unknown kinds/ids keep their raw name. */
+function usageRowLabel(provider, l) {
+  if (!l) return '';
+  if (provider === 'codex') {
+    const base = l.kind === 'session' ? t('usageCodexFiveHour') : l.kind === 'weekly' ? t('usageCodexWeekly')
+      : (l.windowMinutes ? t('usageCodexWindow').replace('{0}', String(l.windowMinutes)) : (l.name || '?'));
+    return l.limitId && l.limitId !== 'codex' ? base + ' · ' + l.limitId : base;
+  }
+  if (provider === 'antigravity') return l.kind === 'exhausted' ? t('usageAgExhausted') : (l.name || '?');
+  return usageLimitLabel(l);
+}
+
+/** The value a header chip shows for one provider, or null for no chip. */
+function usageChipValue(provider, view) {
+  if (!view || !view.enabled || !view.data || !Array.isArray(view.data.limits)) return null;
+  const limits = view.data.limits;
+  if (provider === 'claude') {
+    const s = limits.find(l => l.kind === 'session');
+    return s ? { limit: s, pct: typeof s.percentUsed === 'number' ? s.percentUsed : null } : null;
+  }
+  if (provider === 'codex') {
+    const s = limits.find(l => l.kind === 'session' && l.limitId === 'codex') || limits.find(l => l.kind === 'session')
+      || limits.find(l => l.limitId === 'codex') || limits[0];
+    return s ? { limit: s, pct: s.reset ? null : (typeof s.percentUsed === 'number' ? s.percentUsed : null), reset: !!s.reset } : null;
+  }
+  if (provider === 'antigravity') {
+    const q = limits.find(l => l.kind === 'exhausted');
+    return q ? { limit: q, pct: 100 } : null;
+  }
+  return null;
+}
+
+/** Status line of one provider section. */
+function usageProviderStatus(provider, view) {
+  if (!view || !view.enabled) return '';
+  // Hosted: the numbers come from a sync agent that has gone quiet.
+  if (view.error === 'AGENT_SILENT') {
+    return t('usageAgentSilent').replace('{0}', view.receivedAt ? _usageClock(view.receivedAt) : '?');
+  }
+  if (provider === 'claude') {
+    const st = usageStatusText(view);
+    if (st) return st;
+    return view.fetchedAt ? t('usageAsOf').replace('{0}', _usageClock(view.fetchedAt)) : '';
+  }
+  if (view.status === 'loading') return t('usageLoading');
+  if (view.status === 'error') return usageErrorText(view.error);
+  if (provider === 'codex') {
+    if (view.status === 'empty') return t('usageCodexEmpty');
+    return view.fetchedAt ? t('usageCodexAsOf').replace('{0}', _usageClock(view.fetchedAt)) : '';
+  }
+  if (provider === 'antigravity') {
+    const d = view.data || {};
+    const active = Array.isArray(d.limits) && d.limits.some(l => l.kind === 'exhausted');
+    if (active) return t('usageAgNoPercent');
+    return d.lastExhaustedAt
+      ? t('usageAgNoPercent') + ' · ' + t('usageAgLast').replace('{0}', _usageClock(d.lastExhaustedAt))
+      : t('usageAgNoPercent');
+  }
+  return '';
+}
+
+function _usagePctText(l) {
+  if (l && l.reset) return t('usageCodexReset');
+  if (l && l.kind === 'exhausted') return t('usageAgExhaustedShort');
+  const pct = l ? l.percentUsed : null;
+  return typeof pct === 'number'
+    ? (Math.round(pct * 10) / 10).toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-US') + ' % ' + t('planUsed')
+    : '—';
+}
+
+function _usageBarRow(l) {
+  const pct = l ? l.percentUsed : null;
   const row = document.createElement('div');
   row.className = 'plan-usage-bar-row';
   const track = document.createElement('div');
@@ -1149,112 +1223,140 @@ function _usageBarRow(pct) {
   track.appendChild(bar);
   const pctEl = document.createElement('div');
   pctEl.className = 'plan-usage-pct';
-  pctEl.textContent = typeof pct === 'number'
-    ? (Math.round(pct * 10) / 10).toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-US') + ' % ' + t('planUsed')
-    : '—';
+  pctEl.textContent = _usagePctText(l);
   row.append(track, pctEl);
   return row;
 }
 
-function renderClaudeUsage(view, now = Date.now()) {
-  const section = document.getElementById('plan-usage-section');
-  const chip = document.getElementById('usage-chip');
-  const enabled = !!(view && view.enabled);
-  if (section) section.style.display = enabled ? '' : 'none';
-  if (chip) chip.style.display = enabled ? '' : 'none';
-  if (!enabled) return;
+function _usageProviderGroup(provider, view, now) {
+  const data = view.data || {};
+  const limits = Array.isArray(data.limits) ? data.limits : [];
+  const group = document.createElement('div');
+  group.className = 'plan-usage-provider';
+  group.dataset.provider = provider;
 
-  const data = view.data;
-  const limits = (data && Array.isArray(data.limits)) ? data.limits : [];
+  const head = document.createElement('div');
+  head.className = 'plan-usage-provider-head';
+  const dot = document.createElement('span');
+  dot.className = 'provider-dot provider-dot-' + provider;
+  const name = document.createElement('span');
+  name.className = 'plan-usage-provider-name';
+  name.textContent = USAGE_PROVIDER_NAMES[provider] + (data.plan ? ' · ' + data.plan : '');
+  const status = document.createElement('span');
+  status.className = 'plan-usage-status' + (view.status === 'error' ? ' error' : view.status === 'stale' ? ' stale' : '');
+  status.textContent = usageProviderStatus(provider, view);
+  head.append(dot, name, status);
+  group.appendChild(head);
 
-  const statusEl = document.getElementById('plan-usage-status');
-  if (statusEl) {
-    statusEl.textContent = usageStatusText(view);
-    statusEl.className = 'plan-usage-status' + (view.status === 'error' ? ' error' : view.status === 'stale' ? ' stale' : '');
-  }
-
-  const list = document.getElementById('plan-usage-list');
-  if (list) {
-    list.textContent = '';
-    for (const l of limits) {
-      const item = document.createElement('div');
-      item.className = 'plan-usage-item';
-      const label = document.createElement('div');
-      label.className = 'plan-usage-label';
-      label.textContent = usageLimitLabel(l);
-      const meta = document.createElement('div');
-      meta.className = 'plan-usage-meta';
+  for (const l of limits) {
+    const item = document.createElement('div');
+    item.className = 'plan-usage-item';
+    const label = document.createElement('div');
+    label.className = 'plan-usage-label';
+    label.textContent = usageRowLabel(provider, l);
+    const meta = document.createElement('div');
+    meta.className = 'plan-usage-meta';
+    const bits = [];
+    if (l.reset) {
+      const abs = formatUsageAbsolute(l.resetsAt);
+      bits.push(t('usageCodexResetSince').replace('{0}', abs || '?'));
+    } else {
       const rel = formatUsageRelative(l.resetsAt, now);
       const abs = formatUsageAbsolute(l.resetsAt);
-      const bits = [];
       if (rel) bits.push(rel);
       if (abs) bits.push(abs);
-      if (l.dollars && typeof l.dollars.used === 'number' && typeof l.dollars.limit === 'number') {
-        bits.push('$' + l.dollars.used.toFixed(2) + ' / $' + l.dollars.limit.toFixed(2));
-      }
-      meta.textContent = bits.join(' · ');
-      if (l.resetsAt) meta.title = l.resetsAt;
-      item.append(label, meta, _usageBarRow(l.percentUsed));
-      list.appendChild(item);
     }
-    if (limits.length === 0 && data) {
-      const empty = document.createElement('div');
-      empty.className = 'plan-usage-meta';
-      empty.textContent = t('usageNoLimits');
-      list.appendChild(empty);
+    if (l.dollars && typeof l.dollars.used === 'number' && typeof l.dollars.limit === 'number') {
+      bits.push('$' + l.dollars.used.toFixed(2) + ' / $' + l.dollars.limit.toFixed(2));
     }
+    meta.textContent = bits.join(' · ');
+    if (l.resetsAt) meta.title = l.resetsAt;
+    item.append(label, meta, _usageBarRow(l));
+    group.appendChild(item);
+  }
+  if (provider === 'claude' && limits.length === 0 && view.data) {
+    const empty = document.createElement('div');
+    empty.className = 'plan-usage-meta';
+    empty.textContent = t('usageNoLimits');
+    group.appendChild(empty);
   }
 
-  const extra = document.getElementById('plan-usage-extra');
-  if (extra) {
-    extra.textContent = '';
-    const bits = [];
-    const x = data && data.extraUsage;
-    if (x && typeof x.limit === 'number') {
-      const money = (v) => (typeof v === 'number' ? v.toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '?') + ' ' + (x.currency || '');
-      bits.push(t('usageExtra') + ': ' + money(x.used) + ' / ' + money(x.limit) + (x.enabled ? '' : ' (' + t('usageExtraOff') + ')'));
-    }
-    const br = data && Array.isArray(data.breakdown) ? data.breakdown : [];
-    if (br.length) {
-      bits.push(t('usageBreakdown') + ': ' + br.filter(r => r.percent > 0)
-        .map(r => (r.label || r.key) + ' ' + r.percent + ' %').join(', '));
-    }
+  const bits = [];
+  const x = data.extraUsage;
+  if (x && typeof x.limit === 'number') {
+    const money = (v) => (typeof v === 'number' ? v.toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '?') + ' ' + (x.currency || '');
+    bits.push(t('usageExtra') + ': ' + money(x.used) + ' / ' + money(x.limit) + (x.enabled ? '' : ' (' + t('usageExtraOff') + ')'));
+  }
+  const br = Array.isArray(data.breakdown) ? data.breakdown : [];
+  if (br.length) {
+    bits.push(t('usageBreakdown') + ': ' + br.filter(r => r.percent > 0).map(r => (r.label || r.key) + ' ' + r.percent + ' %').join(', '));
+  }
+  const c = data.credits;
+  if (c && (c.hasCredits || c.unlimited)) {
+    bits.push(t('usageCodexCredits') + ': ' + (c.unlimited ? t('usageUnlimited') : (c.balance ?? '?')));
+  }
+  if (data.reached) bits.push(t('usageCodexReached').replace('{0}', data.reached));
+  if (bits.length) {
+    const extra = document.createElement('div');
+    extra.className = 'plan-usage-extra';
     extra.textContent = bits.join(' · ');
-    extra.style.display = bits.length ? '' : 'none';
+    group.appendChild(extra);
   }
+  return group;
+}
 
-  const ageEl = document.getElementById('plan-usage-age');
-  if (ageEl) ageEl.textContent = view.fetchedAt ? t('usageAsOf').replace('{0}', _usageClock(view.fetchedAt)) : '';
-
-  // Header chip: the session limit, visible on every tab.
-  if (chip) {
-    const session = limits.find(l => l.kind === 'session');
-    const pct = session && typeof session.percentUsed === 'number' ? session.percentUsed : null;
-    const fill = document.getElementById('usage-chip-fill');
-    const pctEl = document.getElementById('usage-chip-pct');
-    if (fill) {
-      fill.style.width = (pct === null ? 0 : Math.min(pct, 100)) + '%';
-      const sev = usageSeverity(pct);
-      fill.className = 'usage-chip-fill' + (sev ? ' ' + sev : '');
-    }
-    if (pctEl) pctEl.textContent = pct === null ? '—' : Math.round(pct) + ' %';
-    chip.classList.toggle('stale', view.status !== 'ok');
-    const tip = [t('usageSession') + ': ' + (pct === null ? '—' : Math.round(pct) + ' %')];
-    if (session) { const rel = formatUsageRelative(session.resetsAt, now); if (rel) tip.push(rel); }
-    const st = usageStatusText(view);
-    if (st) tip.push(st);
-    chip.title = tip.join(' · ');
+function _renderUsageChip(provider, view, now) {
+  const chip = document.getElementById('usage-chip-' + provider);
+  if (!chip) return false;
+  const v = usageChipValue(provider, view);
+  chip.style.display = v ? '' : 'none';
+  if (!v) return false;
+  const fill = chip.querySelector('.usage-chip-fill');
+  const pctEl = chip.querySelector('.usage-chip-pct');
+  if (fill) {
+    fill.style.width = (v.pct === null ? 0 : Math.min(v.pct, 100)) + '%';
+    const sev = usageSeverity(v.pct);
+    fill.className = 'usage-chip-fill' + (sev ? ' ' + sev : '');
   }
+  if (pctEl) pctEl.textContent = v.reset ? '↺' : v.pct === null ? '—' : Math.round(v.pct) + ' %';
+  chip.classList.toggle('stale', provider === 'claude' ? view.status !== 'ok' : provider === 'codex');
+  // "Kontingent erschöpft: erschöpft" says it twice — the label is the value there.
+  const what = v.limit.kind === 'exhausted' ? usageRowLabel(provider, v.limit)
+    : usageRowLabel(provider, v.limit) + ': ' + _usagePctText(v.limit);
+  const tip = [USAGE_PROVIDER_NAMES[provider] + ' · ' + what];
+  const rel = v.reset ? null : formatUsageRelative(v.limit.resetsAt, now);
+  if (rel) tip.push(rel);
+  const st = usageProviderStatus(provider, view);
+  if (st) tip.push(st);
+  chip.title = tip.join(' · ');
+  chip.setAttribute('aria-label', chip.title);
+  return true;
+}
+
+/** Render the overview box and the header chips from /api/usage-limits. */
+function renderUsageLimits(all, now = Date.now()) {
+  const section = document.getElementById('plan-usage-section');
+  const list = document.getElementById('plan-usage-list');
+  const shown = USAGE_PROVIDERS.filter(p => all && all[p] && all[p].enabled);
+  if (section) section.style.display = shown.length ? '' : 'none';
+  if (list) {
+    list.textContent = '';
+    for (const p of shown) list.appendChild(_usageProviderGroup(p, all[p], now));
+  }
+  let anyChip = false;
+  for (const p of USAGE_PROVIDERS) anyChip = _renderUsageChip(p, all ? all[p] : null, now) || anyChip;
+  const chips = document.getElementById('usage-chips');
+  if (chips) chips.style.display = anyChip ? '' : 'none';
 }
 
 // Name kept: loadOverview()'s side loads call it.
 async function loadPlanUsage() {
   try {
-    _claudeUsageView = await api('claude-usage');
+    _usageLimits = await api('usage-limits');
   } catch {
-    _claudeUsageView = null;
+    _usageLimits = null;
   }
-  renderClaudeUsage(_claudeUsageView);
+  renderUsageLimits(_usageLimits);
 }
 
 function _formatActiveTime(minutes) {
@@ -4613,14 +4715,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.textContent = '...';
     try {
       if (!state.demoMode) {
+        // Only Claude has an upstream to ask; Codex and Antigravity are
+        // re-read from their logs by the same reload.
         const res = await fetch('/api/claude-usage/refresh', { method: 'POST' });
-        const view = await res.json();
-        if (view && view.enabled) _claudeUsageView = view;
-        renderClaudeUsage(_claudeUsageView);
-        if (view && view.throttled) {
-          const st = document.getElementById('plan-usage-status');
-          if (st && !st.textContent) st.textContent = t('usageThrottled');
-        }
+        const view = await res.json().catch(() => null);
+        await loadPlanUsage();
+        const note = document.getElementById('plan-usage-note');
+        if (note) note.textContent = view && view.throttled ? t('usageThrottled') : '';
       } else {
         await loadPlanUsage();
       }
@@ -4638,9 +4739,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   setTimeout(tickUsage, 1500);   // the chip should not wait for the first minute
   setInterval(tickUsage, 60 * 1000);
-  document.getElementById('usage-chip')?.addEventListener('click', () => {
+  const openUsageBox = () => {
     switchTab('overview');
     setTimeout(() => document.getElementById('plan-usage-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+  };
+  const usageChips = document.getElementById('usage-chips');
+  usageChips?.addEventListener('click', openUsageBox);
+  usageChips?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openUsageBox(); }
   });
   document.getElementById('export-html-btn')?.addEventListener('click', exportHtml);
   document.getElementById('logout-btn')?.addEventListener('click', logout);

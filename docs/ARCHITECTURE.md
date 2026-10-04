@@ -60,6 +60,10 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/achievements.js` | 1,200 definitions, the stats they read, and the historical backfill. |
 | `lib/auth.js` | GitHub OAuth, sessions, API-key authentication. |
 | `lib/github.js`, `lib/anthropic-api.js` | External integrations, all cached. |
+| `lib/codex-usage.js` | Codex rate limits from Codex's own rollout logs (`rate_limits` on every token_count event: 5-hour and weekly window per `limit_id`, credits, plan) — no network, no token. Incremental async reader: each file is read once in chunks, afterwards only appended bytes (a week of logs is ~250 MB). |
+| `lib/antigravity-usage.js` | Antigravity quota state from its CLI logs: only the `RESOURCE_EXHAUSTED … Resets in …` lines, so "exhausted until …" and the last time it ran out — Antigravity records no percentages. |
+| `lib/usage-limits-store.js` | Hosted side of the usage limits: whitelist sanitizer, per-provider merge and the stale ("agent silent") marking for views a sync agent reported. |
+| `lib/agent-usage-bundle.js` | Bundles the three usage readers into the `usage-lib.js` the installers write next to the sync agent — one implementation for tracker and agent. |
 | `lib/claude-usage.js` | Claude subscription limits from the undocumented `api.anthropic.com/api/oauth/usage` (what Claude Code shows under `/usage`). Reads the OAuth token fresh from the keychain / `~/.claude/.credentials.json` on every fetch and never stores, logs or refreshes it; one server-side poller with 429 backoff; defensive parser. Local single-user only. |
 | `lib/report-project.js` | Standalone per-project HTML report. |
 | `lib/export-html.js` | Self-contained interactive HTML snapshot. |

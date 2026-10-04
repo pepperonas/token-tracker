@@ -14,6 +14,7 @@ let serverInstance;
 let tmpDir;
 let ownerCookie;   // alice, OWNER_GITHUB_ID
 let otherCookie;   // bob, an ordinary account
+let aliceDeviceKey; // alice-laptop's sync API key
 const ADMIN_KEY = 'test-share-admin-key';
 const OWNER_GH_ID = '1000';
 
@@ -95,7 +96,7 @@ describe('tenant isolation (multi-user, over HTTP)', () => {
     db.insertMessagesForUser(
       [msg('bob-1', 'bob', 'bob/hobby'), msg('bob-2', 'bob', 'common/app')], cost, bob.id, null);
     db.updateUserGithubToken(alice.id, 'gho_alice_private_token');
-    db.createDevice(alice.id, 'alice-laptop');
+    aliceDeviceKey = db.createDevice(alice.id, 'alice-laptop').api_key;
 
     ownerCookie = db.createSession(alice.id).token;
     otherCookie = db.createSession(bob.id).token;
@@ -290,6 +291,55 @@ describe('tenant isolation (multi-user, over HTTP)', () => {
         method: 'DELETE', headers: { Authorization: `Bearer ${ADMIN_KEY}` }
       });
       expect(del.status).toBe(204);
+    });
+  });
+  describe('usage limits reported by a sync agent', () => {
+    const report = {
+      claude: { enabled: true, status: 'ok', fetchedAt: new Date().toISOString(),
+        data: { source: 'limits', limits: [{ id: 'session', kind: 'session', percentUsed: 42, resetsAt: '2026-10-04T04:00:00Z' }] } },
+      codex: { enabled: true, status: 'ok', fetchedAt: new Date().toISOString(),
+        data: { source: 'codex-logs', limits: [{ id: 'codex:300', kind: 'session', limitId: 'codex', windowMinutes: 300, percentUsed: 94 }] } },
+      antigravity: { enabled: false }
+    };
+    const sync = (body, key = aliceDeviceKey) => request('/api/sync', {
+      method: 'POST', body, headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+    });
+
+    it('accepts a sync that carries only usage limits', async () => {
+      const r = await sync({ messages: [], usageLimits: report });
+      expect(r.status).toBe(200);
+    });
+
+    it('shows the reporting account its own limits', async () => {
+      const r = await asOwner('/api/usage-limits');
+      expect(r.body.claude.data.limits[0].percentUsed).toBe(42);
+      expect(r.body.codex.data.limits[0].percentUsed).toBe(94);
+      expect(r.body.claude.via).toBe('sync');
+      expect(r.body.claude.device).toBe('alice-laptop');
+      expect(r.body.antigravity).toEqual({ enabled: false });
+    });
+
+    it('shows another account nothing of it', async () => {
+      const r = await asOther('/api/usage-limits');
+      expect(r.body).toEqual({ claude: { enabled: false }, codex: { enabled: false }, antigravity: { enabled: false } });
+    });
+
+    it('does not let a disabled provider in a later report wipe an earlier one', async () => {
+      await sync({ messages: [], usageLimits: { claude: { enabled: false }, codex: { enabled: false }, antigravity: { enabled: false } } });
+      const r = await asOwner('/api/usage-limits');
+      expect(r.body.codex.data.limits[0].percentUsed).toBe(94);
+    });
+
+    it('never stores fields outside the whitelist', async () => {
+      await sync({ messages: [], usageLimits: { claude: { ...report.claude, token: 'sk-ant-oat01-should-not-survive', data: { ...report.claude.data, raw: { secret: 1 } } } } });
+      const r = await asOwner('/api/usage-limits');
+      expect(JSON.stringify(r.body)).not.toContain('sk-ant-');
+      expect(JSON.stringify(r.body)).not.toContain('secret');
+    });
+
+    it('refuses a sync without a valid device key', async () => {
+      const r = await sync({ messages: [], usageLimits: report }, 'nope');
+      expect(r.status).toBe(401);
     });
   });
 });

@@ -4,6 +4,46 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.7.0] — 2026-10-04
+
+### Added
+
+- **Nutzungslimits auch für Codex und Antigravity.** Die Box in der Übersicht
+  hat jetzt einen Abschnitt je Anbieter, die Kopfzeile einen Chip je Anbieter
+  (Anbieterfarbe + Prozent des kurzen Fensters)
+- **Codex** liest seine Limits aus den eigenen Session-Logs — jede Antwort
+  schreibt dort ein `rate_limits`-Objekt mit 5-Stunden-Fenster und Woche je
+  Limit-Art, dazu Plan und Guthaben. Kein Netzwerk, kein Token. Die Werte sind
+  so aktuell wie die letzte Codex-Nutzung auf diesem Rechner, und so steht es
+  auch da; ein abgelaufenes Fenster zeigt „zurückgesetzt“ statt einer alten Zahl
+- **Antigravity** protokolliert keine Prozentwerte, nur das Erschöpfen eines
+  Kontingents samt Restzeit. Angezeigt wird darum „Kontingent erschöpft, Reset
+  um …“, solange es gilt, sonst wann es zuletzt erschöpft war. Bewusst ohne den
+  internen Google-Endpoint, der die Prozentwerte hätte
+- Neue Route `GET /api/usage-limits` mit allen drei Anbietern
+- **Auch auf tracker.celox.io** — der Sync-Agent liest die Limits auf dem
+  eigenen Rechner mit demselben Code wie der lokale Tracker (das Installations-
+  skript legt dafür `usage-lib.js` neben den Agent) und schickt alle 5 Minuten
+  nur die fertigen Werte mit: Prozent, Reset-Zeit, Bezeichnung, **nie einen
+  Token**. Der Server baut sie nach einer festen Liste erlaubter Felder neu auf
+  und speichert sie pro Nutzer; meldet sich der Agent 20 Minuten nicht, steht
+  „Sync-Agent meldet sich nicht“ da. Läuft lokal ein Tracker, übernimmt der
+  Agent dessen Claude-Werte, statt den Endpoint ein zweites Mal abzufragen
+
+### Changed
+
+- **`iguana_necktie` wird nicht mehr angezeigt** — es war eine einmalige
+  Sonderaktion. Codename-Objekte außerhalb von `limits[]` werden jetzt
+  grundsätzlich ignoriert; unbekannte Arten innerhalb von `limits[]` bleiben
+  mit Rohnamen sichtbar
+
+### Performance
+
+- Die Codex-Logs sind groß (eine Woche ~250 MB, eine Sitzung bis 62 MB). Jede
+  Datei wird einmal asynchron in 4-MB-Blöcken gelesen, danach nur noch das
+  Angehängte; gemessen 1,1 s für den ersten Durchlauf, 14 ms danach. Ein
+  `StringDecoder` hält Umlaute heil, die auf eine Blockgrenze fallen
+
 ## [0.6.0] — 2026-10-04
 
 ### Added

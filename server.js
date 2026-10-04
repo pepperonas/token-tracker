@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY, OWNER_GITHUB_ID } = require('./lib/config');
+const { PORT, STATS_CACHE_FILE, MULTI_USER, BASE_URL, SHARE_ADMIN_KEY, OWNER_GITHUB_ID, CODEX_SESSIONS_DIR, ANTIGRAVITY_DIR } = require('./lib/config');
 const { parseAll, backfillRateLimitEvents } = require('./lib/parser');
 const { parseAllCodex } = require('./lib/codex-parser');
 const { parseAllAntigravity } = require('./lib/antigravity-parser');
@@ -34,6 +34,10 @@ const { authenticateRequest, authenticateApiKey, handleAuthRoute } = require('./
 const github = require('./lib/github');
 const anthropicApi = require('./lib/anthropic-api');
 const claudeUsage = require('./lib/claude-usage');
+const codexUsage = require('./lib/codex-usage');
+const antigravityUsage = require('./lib/antigravity-usage');
+const usageLimitsStore = require('./lib/usage-limits-store');
+const USAGE_LIMITS_KEY = 'usage_limits_';
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
@@ -45,6 +49,9 @@ const APP_VERSION = require('./package.json').version;
 // Read sync-agent files for install script generation
 const SYNC_AGENT_INDEX = fs.readFileSync(path.join(__dirname, 'sync-agent', 'index.js'), 'utf-8');
 const SYNC_AGENT_PKG = fs.readFileSync(path.join(__dirname, 'sync-agent', 'package.json'), 'utf-8');
+// The agent reads usage limits with the server's own readers, bundled into one
+// file the installers write next to index.js (lib/agent-usage-bundle.js).
+const SYNC_AGENT_USAGE_LIB = require('./lib/agent-usage-bundle').buildUsageBundle();
 
 // MIME types
 const MIME = {
@@ -90,6 +97,10 @@ const CLAUDE_USAGE_ENABLED = !MULTI_USER
   && process.env.NODE_ENV !== 'test'
   && process.env.CLAUDE_USAGE_ENABLED !== 'false';
 const usagePoller = CLAUDE_USAGE_ENABLED ? claudeUsage.createDefaultPoller(require('./lib/db')) : null;
+// Codex and Antigravity limits come from their own local logs — no network,
+// no token. Same rule as above: this machine's state, so local single-user only.
+const codexLimits = MULTI_USER ? null : codexUsage.createCodexUsage(CODEX_SESSIONS_DIR);
+const antigravityLimits = MULTI_USER ? null : antigravityUsage.createAntigravityUsage(path.join(ANTIGRAVITY_DIR, 'log'));
 // The predecessor (lib/plan-usage.js) could store the OAuth token encrypted in
 // the metadata table and cached results under plan_usage_*. Neither may
 // outlive it — the token must never be persisted.
@@ -407,6 +418,10 @@ cat > "\$INSTALL_DIR/package.json" << 'SYNCAGENTEOF'
 ${SYNC_AGENT_PKG}
 SYNCAGENTEOF
 
+cat > "\$INSTALL_DIR/usage-lib.js" << 'SYNCAGENTEOF'
+${SYNC_AGENT_USAGE_LIB}
+SYNCAGENTEOF
+
 cat > "\$INSTALL_DIR/config.json" << SYNCAGENTEOF
 {
   "serverUrl": "${serverUrl}",
@@ -610,6 +625,11 @@ ${SYNC_AGENT_PKG}
 '@
 Set-Content -Path (Join-Path $InstallDir "package.json") -Value $packageJson -Encoding UTF8
 
+$usageLib = @'
+${SYNC_AGENT_USAGE_LIB}
+'@
+Set-Content -Path (Join-Path $InstallDir "usage-lib.js") -Value $usageLib -Encoding UTF8
+
 $configJson = @"
 {
   "serverUrl": "${serverUrl}",
@@ -708,10 +728,23 @@ const server = http.createServer((req, res) => {
       const hasRateLimitEvents = Array.isArray(rateLimitEvents) && rateLimitEvents.length > 0;
 
       // Older sync agents still attach `planUsage`. It is accepted and dropped
-      // (the feature is local-only now) so those agents keep syncing.
+      // so those agents keep syncing; the successor is `usageLimits`.
       const hasPlanUsage = !!body.planUsage;
-      if (!hasMessages && !hasRateLimitEvents && !hasPlanUsage) {
+      const hasUsageLimits = !!body.usageLimits && typeof body.usageLimits === 'object';
+      if (!hasMessages && !hasRateLimitEvents && !hasPlanUsage && !hasUsageLimits) {
         return sendJSON(res, { error: 'No data provided' }, 400);
+      }
+
+      // Usage limits read on the user's machine (percentages and reset times —
+      // never a token). Sanitized and merged per provider in usage-limits-store.
+      if (hasUsageLimits) {
+        try {
+          const key = USAGE_LIMITS_KEY + syncUser.id;
+          let stored = null;
+          try { stored = JSON.parse(getMetadata(key) || 'null'); } catch { stored = null; }
+          const merged = usageLimitsStore.mergeReport(stored, body.usageLimits, new Date().toISOString(), syncDevice ? syncDevice.name : null);
+          setMetadata(key, JSON.stringify(merged));
+        } catch (e) { console.error('Storing usage limits failed for user', syncUser.id, ':', e.message); }
       }
 
       if (hasMessages) {
@@ -1729,6 +1762,22 @@ const server = http.createServer((req, res) => {
     return sendJSON(res, usagePoller ? usagePoller.view() : { enabled: false });
   }
 
+  // All providers at once — what the overview box and the header chips read.
+  if (pathname === '/api/usage-limits' && req.method === 'GET') {
+    // Hosted: what this user's own sync agents reported, nothing read here.
+    if (MULTI_USER) {
+      let stored = null;
+      try { stored = JSON.parse(getMetadata(USAGE_LIMITS_KEY + user.id) || 'null'); } catch { stored = null; }
+      return sendJSON(res, usageLimitsStore.viewsFromStore(stored));
+    }
+    const off = { enabled: false };
+    return sendJSON(res, {
+      claude: usagePoller ? usagePoller.view() : off,
+      codex: codexLimits ? codexLimits.view() : off,
+      antigravity: antigravityLimits ? antigravityLimits.view() : off
+    });
+  }
+
   // Manual refresh: allowed at most every 2 minutes and never during a 429
   // backoff; otherwise answers with the cached view and throttled: true.
   if (pathname === '/api/claude-usage/refresh' && req.method === 'POST') {
@@ -1835,6 +1884,9 @@ function startServer(port) {
   return new Promise((resolve) => {
     server.listen(p, () => {
       if (usagePoller) usagePoller.start();
+      // Warm the Codex reader: its first scan reads up to a week of large logs
+      // asynchronously, so the first page view is not stuck at "loading".
+      if (codexLimits) codexLimits.refresh();
       console.log(`Dashboard: http://localhost:${p}`);
       console.log(`API: http://localhost:${p}/api/overview`);
       // One-shot full GC shortly after bootstrap: the startup load/parse churns

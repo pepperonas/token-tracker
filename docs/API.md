@@ -106,7 +106,7 @@ message passes through.
 
 | Route | Description |
 |---|---|
-| `POST /api/sync` | Device API key. Body `{ messages[], rateLimitEvents?[] }`. A `planUsage` field from older agents is accepted and ignored. Idempotent — messages are upserted by ID. |
+| `POST /api/sync` | Device API key. Body `{ messages[], rateLimitEvents?[], usageLimits? }`. `usageLimits` = `{ claude, codex, antigravity }` views read on the agent's machine; sanitized against a whitelist and stored per user (a disabled provider never overwrites a stored one). A `planUsage` field from older agents is accepted and ignored. Idempotent — messages are upserted by ID. |
 | `/api/sync-key` | The legacy account-level key. |
 | `/api/sync-agent/install.sh?key=…` | A personalised installer with the config baked in. `install.ps1` for Windows. |
 
@@ -148,14 +148,18 @@ All stale-while-revalidate cached; see [CONFIGURATION.md](CONFIGURATION.md).
 | `POST /api/anthropic/refresh` | Force a refresh. |
 | `POST /api/user/anthropic-key` | Store the key AES-256-GCM encrypted. |
 
-## Claude subscription usage
+## Usage limits (Claude, Codex, Antigravity)
 
-Local single-user mode only — in multi-user mode, under the test runner, or
-with `CLAUDE_USAGE_ENABLED=false` both routes answer `{ enabled: false }`.
+Single-user: read on this machine (the Claude poller is off under the test
+runner and with `CLAUDE_USAGE_ENABLED=false`). Multi-user: nothing is read on
+the server — `/api/usage-limits` returns what the user's own sync agents
+reported, with `via: 'sync'`, `receivedAt`, `device`, and `status: 'stale'`
++ `error: 'AGENT_SILENT'` after 20 minutes without a report.
 Neither route ever returns or accepts a token.
 
 | Route | Description |
 |---|---|
+| `/api/usage-limits` | All providers at once: `{ claude, codex, antigravity }`, each in the shape below (`{ enabled: false }` when unavailable). Codex comes from its session logs (`data.source: 'codex-logs'`, limits carry `limitId`, `windowMinutes`, `reset`; plus `plan`, `credits`, `reached`); Antigravity from its CLI logs (`'antigravity-logs'`: at most one `exhausted` limit while a quota is used up, plus `lastExhaustedAt`; it records no percentages). What the overview box and header chips read. |
 | `/api/claude-usage` | The poller's cached view: `{ enabled, status: loading\|ok\|stale\|error, error, data: { source, limits[], extraUsage, breakdown }, fetchedAt, lastAttemptAt, nextAttemptAt, intervalMinutes }`. Never triggers an upstream call. Each limit is `{ id, kind, name, group, percentUsed, resetsAt, scopeLabel, dollars? }`; unknown kinds keep their raw name. |
 | `POST /api/claude-usage/refresh` | Fetch now — at most every 2 minutes and never during a 429 backoff; otherwise returns the cached view with `throttled: true`. |
 

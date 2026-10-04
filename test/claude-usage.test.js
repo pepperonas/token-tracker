@@ -6,7 +6,7 @@ const SAMPLE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'docs', 'us
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 describe('claude-usage — parseUsage', () => {
-  it('reads the real sample: limits[] first, the active codename limit, extra usage, breakdown', () => {
+  it('reads the real sample: limits[], extra usage, breakdown — and no codename objects', () => {
     const r = usage.parseUsage(SAMPLE);
     expect(r.source).toBe('limits');
     const byId = Object.fromEntries(r.limits.map(l => [l.id, l]));
@@ -15,10 +15,10 @@ describe('claude-usage — parseUsage', () => {
     const scoped = r.limits.find(l => l.kind === 'weekly_scoped');
     expect(scoped.percentUsed).toBe(0);
     expect(scoped.scope).toBeTruthy();
-    // The codename object is not in limits[] but carries real usage — kept, raw name.
-    expect(byId.iguana_necktie).toMatchObject({ kind: 'other', name: 'iguana_necktie', resetsAt: '2026-11-05T07:59:00+00:00' });
-    expect(byId.iguana_necktie.percentUsed).toBeCloseTo(99.66, 2);
-    expect(byId.iguana_necktie.dollars).toEqual({ used: 249.148676, limit: 250 });
+    // iguana_necktie carries real usage in the sample but was a one-off
+    // promotion: codename objects outside limits[] are not shown (2026-10-04).
+    expect(byId.iguana_necktie).toBeUndefined();
+    expect(r.limits.map(l => l.kind)).toEqual(['session', 'weekly_all', 'weekly_scoped']);
     // Legacy objects are NOT duplicated while limits[] is present.
     expect(r.limits.filter(l => l.kind === 'legacy_five_hour' || l.kind === 'legacy_seven_day')).toEqual([]);
     expect(r.extraUsage).toMatchObject({ enabled: false, used: 0, limit: 50, currency: 'EUR', disabledReason: 'out_of_credits' });
@@ -81,8 +81,9 @@ describe('claude-usage — parseUsage', () => {
     }
   });
 
-  it('ignores codename objects that are null or carry no utilization', () => {
-    const r = usage.parseUsage({ limits: [{ kind: 'session', percent: 1 }], tangelo: null, cinder_cove: { foo: 1 } });
+  it('ignores codename objects, even ones that carry utilization', () => {
+    const r = usage.parseUsage({ limits: [{ kind: 'session', percent: 1 }], tangelo: null, cinder_cove: { foo: 1 },
+      iguana_necktie: { utilization: 99.6, resets_at: '2026-11-05T07:59:00Z', limit_dollars: 250, used_dollars: 249 } });
     expect(r.limits.map(l => l.id)).toEqual(['session']);
   });
 });

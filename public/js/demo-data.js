@@ -1102,7 +1102,28 @@ const DEMO_DATA = (() => {
     'subagent-stats': subagentStatsData,
     'tool-cost-daily': toolCostDailyData,
     'rate-limits': rateLimitsData,
-    'claude-usage': claudeUsageData,
+    'usage-limits': {
+      claude: claudeUsageData,
+      codex: {
+        enabled: true, status: 'ok', error: null,
+        fetchedAt: new Date(Date.now() - 40 * 60000).toISOString(),
+        data: {
+          source: 'codex-logs', plan: 'plus', credits: null, reached: null, extraUsage: null, breakdown: null,
+          limits: [
+            { id: 'codex:300', kind: 'session', name: 'codex', limitId: 'codex', windowMinutes: 300, percentUsed: 62,
+              resetsAt: new Date(Date.now() + 2 * 3600000).toISOString(), reset: false },
+            { id: 'codex:10080', kind: 'weekly', name: 'codex', limitId: 'codex', windowMinutes: 10080, percentUsed: 27,
+              resetsAt: new Date(Date.now() + 5 * 86400000).toISOString(), reset: false }
+          ]
+        }
+      },
+      antigravity: {
+        enabled: true, status: 'ok', error: null,
+        fetchedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+        data: { source: 'antigravity-logs', limits: [], extraUsage: null, breakdown: null,
+          lastExhaustedAt: new Date(Date.now() - 2 * 86400000).toISOString(), percentAvailable: false }
+      }
+    },
     'trends': trendsData,
     'github/stats': githubStatsData,
     'github/billing': githubBillingData,

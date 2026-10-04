@@ -66,8 +66,59 @@ describe('claude usage — frontend helpers', () => {
   it('has German and English texts for every usage key', () => {
     const { LANG } = F.pick(['LANG']);
     const keys = Object.keys(LANG.de).filter(k => k.startsWith('usage'));
-    expect(keys.length).toBeGreaterThanOrEqual(17);
+    expect(keys.length).toBeGreaterThanOrEqual(30);
     for (const k of keys) expect(LANG.en[k]).toBeTruthy();
+  });
+});
+
+describe('usage limits — Codex and Antigravity in the frontend', () => {
+  let F;
+  beforeAll(() => { F = loadFrontend(); });
+  afterEach(() => F.setLang('de'));
+  const codexView = (limits, extra = {}) => ({ enabled: true, status: 'ok', fetchedAt: '2026-10-03T22:26:42Z', data: { limits, ...extra } });
+
+  it('labels Codex windows and keeps other limit ids visible', () => {
+    F.setLang('de');
+    expect(F.usageRowLabel('codex', { kind: 'session', limitId: 'codex', windowMinutes: 300 })).toBe('5-Stunden-Fenster');
+    expect(F.usageRowLabel('codex', { kind: 'weekly', limitId: 'codex', windowMinutes: 10080 })).toBe('Woche');
+    expect(F.usageRowLabel('codex', { kind: 'weekly', limitId: 'base_model_inference', windowMinutes: 10080 }))
+      .toBe('Woche · base_model_inference');
+    expect(F.usageRowLabel('codex', { kind: 'window', limitId: 'codex', windowMinutes: 60 })).toBe('60-Minuten-Fenster');
+    expect(F.usageRowLabel('antigravity', { kind: 'exhausted' })).toBe('Kontingent erschöpft');
+    expect(F.usageRowLabel('claude', { kind: 'session' })).toBe('Aktuelle Sitzung');
+  });
+
+  it('chooses the chip value: the short window per provider', () => {
+    const codex = codexView([
+      { kind: 'weekly', limitId: 'codex', percentUsed: 38 },
+      { kind: 'session', limitId: 'codex', percentUsed: 94 }
+    ]);
+    expect(F.usageChipValue('codex', codex).pct).toBe(94);
+    expect(F.usageChipValue('claude', { enabled: true, data: { limits: [{ kind: 'session', percentUsed: 9 }] } }).pct).toBe(9);
+  });
+
+  it('shows no percentage for a Codex window that has already reset', () => {
+    const v = F.usageChipValue('codex', codexView([{ kind: 'session', limitId: 'codex', percentUsed: 94, reset: true }]));
+    expect(v.pct).toBeNull();
+    expect(v.reset).toBe(true);
+  });
+
+  it('shows an Antigravity chip only while the quota is exhausted', () => {
+    expect(F.usageChipValue('antigravity', { enabled: true, data: { limits: [] } })).toBeNull();
+    expect(F.usageChipValue('antigravity', { enabled: true, data: { limits: [{ kind: 'exhausted', percentUsed: 100 }] } }).pct).toBe(100);
+  });
+
+  it('shows no chip for a disabled provider', () => {
+    for (const p of ['claude', 'codex', 'antigravity']) expect(F.usageChipValue(p, { enabled: false })).toBeNull();
+  });
+
+  it('says honestly what each source is', () => {
+    F.setLang('de');
+    expect(F.usageProviderStatus('codex', codexView([]))).toMatch(/^Stand der letzten Codex-Nutzung: /);
+    expect(F.usageProviderStatus('codex', { enabled: true, status: 'empty' })).toBe('Keine Codex-Limits in den Logs der letzten 8 Tage');
+    expect(F.usageProviderStatus('codex', { enabled: true, status: 'loading' })).toBe('Lädt…');
+    expect(F.usageProviderStatus('antigravity', { enabled: true, status: 'ok', data: { limits: [], lastExhaustedAt: '2026-10-03T04:11:11Z' } }))
+      .toMatch(/^Antigravity protokolliert keine Prozentwerte · zuletzt erschöpft /);
   });
 });
 
@@ -76,19 +127,20 @@ describe('claude usage — markup and wiring', () => {
   const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
 
   it('has the containers the renderer writes into', () => {
-    for (const id of ['plan-usage-section', 'plan-usage-list', 'plan-usage-status', 'plan-usage-extra', 'plan-usage-age',
-      'plan-usage-refresh', 'usage-chip', 'usage-chip-fill', 'usage-chip-pct']) {
+    for (const id of ['plan-usage-section', 'plan-usage-list', 'plan-usage-refresh', 'plan-usage-note',
+      'usage-chips', 'usage-chip-claude', 'usage-chip-codex', 'usage-chip-antigravity']) {
       expect(html).toContain(`id="${id}"`);
     }
   });
 
   it('starts hidden — shown only once the server says it is enabled', () => {
     expect(html).toMatch(/id="plan-usage-section"[^>]*display:none/);
-    expect(html).toMatch(/id="usage-chip"[^>]*display:none/);
+    expect(html).toMatch(/id="usage-chips"[^>]*display:none/);
+    for (const p of ['claude', 'codex', 'antigravity']) expect(html).toMatch(new RegExp(`id="usage-chip-${p}"[^>]*display:none`));
   });
 
   it('talks to the new routes only', () => {
-    expect(app).toContain("api('claude-usage')");
+    expect(app).toContain("api('usage-limits')");
     expect(app).toContain("'/api/claude-usage/refresh'");
     expect(app).not.toContain('/api/plan-usage');
   });

@@ -895,26 +895,31 @@ html.js .uheat-anim .uheat-legend {
   margin-top: 8px;
 }
 
-/* Header chip: the session limit on every tab */
+/* Header chips: the short-window limit per provider, on every tab */
+.usage-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 999px;
+}
+.usage-chips:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .usage-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-height: 32px;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface2);
   color: var(--text);
-  font: inherit;
   font-size: 0.82em;
-  cursor: pointer;
 }
-.usage-chip:hover { border-color: var(--accent); }
-.usage-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.usage-chip-label { color: var(--text-muted); }
+.usage-chips:hover .usage-chip { border-color: var(--accent); }
+.usage-chip .provider-dot { margin: 0; }
 .usage-chip-track {
-  width: 56px;
+  width: 44px;
   height: 6px;
   border-radius: 3px;
   background: var(--border);
@@ -931,13 +936,36 @@ html.js .uheat-anim .uheat-legend {
 .usage-chip-fill.warn { background: var(--orange); }
 .usage-chip-fill.danger { background: var(--red); }
 .usage-chip-pct { font-weight: 600; font-variant-numeric: tabular-nums; min-width: 3ch; text-align: right; }
+/* Not live (Claude stale, or Codex = as of its last use): dashed, never dimmed text */
 .usage-chip.stale { border-style: dashed; }
 @media (max-width: 600px) {
-  .usage-chip-label, .usage-chip-track { display: none; }
+  .usage-chip-track { display: none; }
+  .usage-chip { padding: 4px 8px; gap: 5px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .usage-chip-fill { transition: none; }
 }
+
+/* One section per provider inside the usage box */
+.plan-usage-provider {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plan-usage-provider + .plan-usage-provider {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-top: 4px;
+}
+.plan-usage-provider-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.plan-usage-provider-name { font-weight: 600; color: var(--text); }
+.plan-usage-provider-head .plan-usage-status { margin-left: auto; }
+.plan-usage-provider .plan-usage-extra { margin-top: 0; }
 
 /* Active Sessions */
 .active-sessions {

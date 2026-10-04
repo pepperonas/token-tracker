@@ -11,12 +11,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.6.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.6.0">
-  <img src="https://img.shields.io/badge/lines_of_code-43.1k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="43136 lines of code across 76 files">
+  <img src="https://img.shields.io/badge/version-v0.7.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.0">
+  <img src="https://img.shields.io/badge/lines_of_code-44.3k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44338 lines of code across 82 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-640_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="640 tests passing">
+  <img src="https://img.shields.io/badge/tests-682_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="682 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -40,19 +40,19 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/API_routes-70-0969da?style=flat-square" alt="70 API routes">
+  <img src="https://img.shields.io/badge/API_routes-71-0969da?style=flat-square" alt="71 API routes">
   <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
-  <img src="https://img.shields.io/badge/lib_modules-20-0969da?style=flat-square" alt="20 library modules">
+  <img src="https://img.shields.io/badge/lib_modules-24-0969da?style=flat-square" alt="24 library modules">
   <img src="https://img.shields.io/badge/charts-44-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="44 chart types">
   <img src="https://img.shields.io/badge/doc_pages-5-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="5 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-38-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="38 test files">
+  <img src="https://img.shields.io/badge/test_files-40-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="40 test files">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-5914_x_2-bf8700?style=flat-square" alt="5914 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-5942_x_2-bf8700?style=flat-square" alt="5942 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 
@@ -131,7 +131,7 @@ Open [http://localhost:5010](http://localhost:5010)
 ## Highlights
 
 - **Multi-Provider Tracking (Claude Code, OpenAI Codex, Google Antigravity)** — track tokens, costs, models, and sessions across all three agent platforms simultaneously. Automatic zero-dependency ingestion from `~/.codex/sessions/**/rollout-*.jsonl` and `~/.gemini/antigravity-cli/conversations/*.db`, real-time file watcher, segmented pill switcher in the header, visual share distribution bar, dynamic filter banners with quick reset, and colored badges
-- **Claude subscription usage** — the limits Claude Code shows under `/usage` (session, week, week per model, extra usage) in the overview and as a session chip in the header, with reset times in Europe/Berlin. Read with Claude Code's own OAuth token, fresh from the keychain on every fetch and never stored; one server-side poller with 429 backoff. Local single-user only
+- **Usage limits for Claude, Codex and Antigravity** — Claude's `/usage` limits (session, week, week per model, extra usage) via Claude Code's own OAuth token, read fresh from the keychain and never stored; Codex's 5-hour and weekly windows straight from its session logs; Antigravity's "quota exhausted until …" from its CLI logs. One section per provider in the overview and one chip per provider in the header, reset times in Europe/Berlin. On a hosted instance the sync agent reads them on your machine and sends only the numbers — never a token
 - **40+ interactive charts** across 10 tabs with real-time SSE updates
 - **Claude API tab** — Anthropic Admin API usage/cost dashboard: budget tracking with progress bar, 4 KPIs (total cost, tokens, avg cost/day, cache efficiency), daily cost/token charts by model, model distribution doughnut, cumulative cost trend. **Per-API-key breakdown**: horizontal stacked bar chart showing cost per key by model, daily cost timeline per key, key comparison table (tokens, input, output, cache %, calculated cost, last used), token history timeline (stacked area). Costs per key calculated via model pricing since the cost API doesn't support `group_by api_key_id`. Key names resolved via `/v1/organizations/api_keys`. AES-256-GCM encrypted key storage, SWR caching with configurable TTL
 - **Usage trends** — four live cards (today / this week / this month / last 7 days) comparing against the previous period **cut off at the same point in time** (yesterday up to this hour, last week up to this weekday+time, last month up to this day-of-month, clamped for shorter months), each with a delta badge, overlay sparkline and month-end projection. Below them five comparison charts on the same payload: 90-day volume with 7d/30d moving averages, cumulative month vs. previous month, week comparison Mon–Sun, project momentum (last 7 days vs. the 7 before) and model-mix shift as 100 % stacked bars. Independent of the period filter, honours the cache and token↔cost toggles
@@ -158,7 +158,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **640 automated tests** — unit, integration, and multi-user API tests
+- **682 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
