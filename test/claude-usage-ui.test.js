@@ -145,3 +145,92 @@ describe('claude usage — markup and wiring', () => {
     expect(app).not.toContain('/api/plan-usage');
   });
 });
+
+describe('usage box — collapsible, and the state survives reload and re-login', () => {
+  // A small fake DOM element with a real classList and attribute store, so the
+  // toggle's behaviour is tested, not just its presence in the source.
+  const el = () => {
+    const cls = new Set(), attrs = {}, handlers = {};
+    return {
+      dataset: {},
+      classList: {
+        add: c => cls.add(c), remove: c => cls.delete(c), contains: c => cls.has(c),
+        toggle: (c, on) => { const v = on === undefined ? !cls.has(c) : !!on; v ? cls.add(c) : cls.delete(c); return v; }
+      },
+      setAttribute: (k, v) => { attrs[k] = String(v); },
+      getAttribute: k => (k in attrs ? attrs[k] : null),
+      addEventListener: (ev, fn) => { (handlers[ev] = handlers[ev] || []).push(fn); },
+      click() { (handlers.click || []).forEach(fn => fn()); },
+      handlerCount: ev => (handlers[ev] || []).length
+    };
+  };
+
+  let F;
+  beforeEach(() => { F = loadFrontend(); });
+
+  it('collapses on click, stores it, and restores it on the next page load', () => {
+    const box = el(), btn = el();
+    F.initCollapsible(box, btn, 'usageLimitsCollapsed');
+    expect(box.classList.contains('collapsed')).toBe(false);
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+
+    btn.click();
+    expect(box.classList.contains('collapsed')).toBe(true);
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+
+    // A reload (or logout + login) builds fresh elements; the stored choice wins.
+    const box2 = el(), btn2 = el();
+    F.initCollapsible(box2, btn2, 'usageLimitsCollapsed');
+    expect(box2.classList.contains('collapsed')).toBe(true);
+    expect(btn2.getAttribute('aria-expanded')).toBe('false');
+
+    btn2.click();
+    const box3 = el(), btn3 = el();
+    F.initCollapsible(box3, btn3, 'usageLimitsCollapsed');
+    expect(box3.classList.contains('collapsed')).toBe(false);
+  });
+
+  it('binds the click handler once, however often the overview re-renders', () => {
+    const box = el(), btn = el();
+    for (let i = 0; i < 5; i++) F.initCollapsible(box, btn, 'usageLimitsCollapsed');
+    expect(btn.handlerCount('click')).toBe(1);
+    btn.click();
+    expect(box.classList.contains('collapsed')).toBe(true); // one toggle, not five
+  });
+
+  it('keeps the two boxes independent', () => {
+    const a = el(), aBtn = el(), b = el(), bBtn = el();
+    F.initCollapsible(a, aBtn, 'usageLimitsCollapsed');
+    F.initCollapsible(b, bBtn, 'activeSessionsCollapsed');
+    aBtn.click();
+    expect(a.classList.contains('collapsed')).toBe(true);
+    expect(b.classList.contains('collapsed')).toBe(false);
+  });
+
+  it('the usage box is wired to its OWN key, separate from the active-sessions box', () => {
+    const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
+    const render = app.slice(app.indexOf('function renderUsageLimits('), app.indexOf('function renderUsageLimits(') + 3000);
+    expect(render).toMatch(/initCollapsible\(section,\s*document\.getElementById\('plan-usage-toggle'\),\s*'usageLimitsCollapsed'\)/);
+    const active = app.slice(app.indexOf('function initActiveSessionsCollapse('), app.indexOf('function initCollapsible('));
+    expect(active).toMatch(/'activeSessionsCollapsed'/);
+    expect(active).not.toMatch(/usageLimitsCollapsed/);
+  });
+
+  it('logout leaves the stored choice alone', () => {
+    const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
+    const logout = app.slice(app.indexOf('async function logout('), app.indexOf('}', app.indexOf('async function logout(')) + 1);
+    expect(logout).not.toMatch(/localStorage\.(clear|removeItem)/);
+  });
+
+  it('the header is a real button inside the heading, and the translated label sits in its own span', () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+    const head = html.slice(html.indexOf('id="plan-usage-section"'), html.indexOf('id="plan-usage-list"'));
+    // A <button> may not contain an <h3>; the heading wraps the button instead.
+    expect(head).toMatch(/<h3[^>]*>\s*<button[^>]*id="plan-usage-toggle"/);
+    expect(head).toMatch(/aria-controls="plan-usage-body"/);
+    // applyTranslations() replaces textContent — on the button it would wipe the caret.
+    expect(head).toMatch(/<span data-i18n="planUsageHeader">/);
+    expect(head).not.toMatch(/<(h3|button)[^>]*data-i18n=/);
+    expect(html).toMatch(/id="plan-usage-body"[\s\S]*id="plan-usage-list"[\s\S]*id="plan-usage-refresh"/);
+  });
+});

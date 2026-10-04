@@ -1044,11 +1044,20 @@ async function loadActiveSessions() {
 // status refresh, but the collapsed state lives on the container (not the grid)
 // and is persisted, so it survives refreshes. Handler is wired exactly once.
 function initActiveSessionsCollapse() {
-  const container = document.getElementById('active-sessions');
-  const toggle = document.getElementById('active-sessions-toggle');
-  if (!container || !toggle) return;
+  initCollapsible(document.getElementById('active-sessions'),
+    document.getElementById('active-sessions-toggle'), 'activeSessionsCollapsed');
+}
 
-  const collapsed = localStorage.getItem('activeSessionsCollapsed') === '1';
+/**
+ * A collapsible box whose state is a per-browser preference in localStorage,
+ * so it survives a reload and a logout/login (logout() deliberately leaves
+ * localStorage alone). Safe to call on every render: the stored state is
+ * re-applied each time, the click handler is bound once.
+ */
+function initCollapsible(container, toggle, storageKey) {
+  if (!container || !toggle) return;
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(storageKey) === '1'; } catch { /* storage blocked */ }
   container.classList.toggle('collapsed', collapsed);
   toggle.setAttribute('aria-expanded', String(!collapsed));
 
@@ -1058,7 +1067,7 @@ function initActiveSessionsCollapse() {
     const nowCollapsed = !container.classList.contains('collapsed');
     container.classList.toggle('collapsed', nowCollapsed);
     toggle.setAttribute('aria-expanded', String(!nowCollapsed));
-    localStorage.setItem('activeSessionsCollapsed', nowCollapsed ? '1' : '0');
+    try { localStorage.setItem(storageKey, nowCollapsed ? '1' : '0'); } catch { /* storage blocked */ }
   });
 }
 
@@ -1339,6 +1348,7 @@ function renderUsageLimits(all, now = Date.now()) {
   const list = document.getElementById('plan-usage-list');
   const shown = USAGE_PROVIDERS.filter(p => all && all[p] && all[p].enabled);
   if (section) section.style.display = shown.length ? '' : 'none';
+  initCollapsible(section, document.getElementById('plan-usage-toggle'), 'usageLimitsCollapsed');
   if (list) {
     list.textContent = '';
     for (const p of shown) list.appendChild(_usageProviderGroup(p, all[p], now));

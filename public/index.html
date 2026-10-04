@@ -447,12 +447,19 @@
       <!-- Usage limits per provider (local single-user only; filled by renderUsageLimits) -->
       <div class="plan-usage-section" id="plan-usage-section" style="display:none;">
         <div class="plan-usage-header">
-          <h3 data-i18n="planUsageHeader">Nutzungslimits</h3>
+          <h3>
+            <button type="button" class="plan-usage-toggle" id="plan-usage-toggle" aria-expanded="true" aria-controls="plan-usage-body">
+              <span data-i18n="planUsageHeader">Nutzungslimits</span>
+              <span class="active-collapse-caret" aria-hidden="true"></span>
+            </button>
+          </h3>
         </div>
-        <div class="plan-usage-grid" id="plan-usage-list"></div>
-        <div class="plan-usage-footer">
-          <button class="rebuild-btn" id="plan-usage-refresh" data-i18n="caRefresh">Aktualisieren</button>
-          <span id="plan-usage-note" role="status" aria-live="polite"></span>
+        <div class="plan-usage-body" id="plan-usage-body">
+          <div class="plan-usage-grid" id="plan-usage-list"></div>
+          <div class="plan-usage-footer">
+            <button class="rebuild-btn" id="plan-usage-refresh" data-i18n="caRefresh">Aktualisieren</button>
+            <span id="plan-usage-note" role="status" aria-live="polite"></span>
+          </div>
         </div>
       </div>
 

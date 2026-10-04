@@ -11,12 +11,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.7.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.1">
-  <img src="https://img.shields.io/badge/lines_of_code-44.4k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44403 lines of code across 82 files">
+  <img src="https://img.shields.io/badge/version-v0.7.2-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.2">
+  <img src="https://img.shields.io/badge/lines_of_code-44.5k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44530 lines of code across 82 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-685_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="685 tests passing">
+  <img src="https://img.shields.io/badge/tests-691_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="691 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -158,7 +158,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **685 automated tests** — unit, integration, and multi-user API tests
+- **691 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

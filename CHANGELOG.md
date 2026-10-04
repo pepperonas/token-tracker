@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.7.2] — 2026-10-05
+
+### Added
+
+- **Die Box „Nutzungslimits" lässt sich zu- und aufklappen.** Ein Klick auf
+  die Überschrift klappt sie auf eine Zeile zusammen; der Zustand liegt im
+  Browser (`localStorage`, Schlüssel `usageLimitsCollapsed`) und übersteht
+  damit Neuladen, Abmelden und erneutes Anmelden. Die Box der aktiven
+  Sitzungen nutzt seither denselben Mechanismus (`initCollapsible`), behält
+  aber ihren eigenen Schlüssel — beide Boxen klappen unabhängig voneinander
+
 ## [0.7.1] — 2026-10-04
 
 ### Fixed

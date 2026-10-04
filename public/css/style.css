@@ -811,7 +811,28 @@ html.js .uheat-anim .uheat-legend {
   font-size: 1.05em;
   font-weight: 600;
   color: var(--text);
+  flex: 1;
 }
+/* The whole title row is the toggle (same pattern as the active-sessions box). */
+.plan-usage-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plan-usage-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+.plan-usage-toggle .active-collapse-caret { color: var(--text-muted); }
+.plan-usage-section.collapsed .plan-usage-header { margin-bottom: 0; }
+.plan-usage-section.collapsed .active-collapse-caret { transform: rotate(-90deg); }
+.plan-usage-section.collapsed .plan-usage-body { display: none; }
 .plan-usage-status {
   font-size: 0.82em;
   color: var(--text-muted);

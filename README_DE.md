@@ -5,12 +5,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.7.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.1">
-  <img src="https://img.shields.io/badge/lines_of_code-44.4k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44403 lines of code across 82 files">
+  <img src="https://img.shields.io/badge/version-v0.7.2-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.2">
+  <img src="https://img.shields.io/badge/lines_of_code-44.5k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44530 lines of code across 82 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-685_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="685 tests passing">
+  <img src="https://img.shields.io/badge/tests-691_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="691 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -155,7 +155,8 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 
 - **Die Werte, die Claude Code unter `/usage` zeigt** — aktuelle Sitzung, Woche (alle Modelle), Woche je Modell (z. B. Fable), dazu Extra-Usage und die Aufteilung der Woche nach Bereich (Claude Code / Chat / …)
 - **Box in der Übersicht + Chip in der Kopfzeile** — je Limit Balken, Prozent und Reset (relativ und absolut, Europe/Berlin); der Chip zeigt in jedem Tab das Sitzungs-Prozent und springt per Klick zur Box. Zustände für „lädt“, „veraltet (Stand: …)“ und „Fehler“
-- **Unbekannte Limits bleiben sichtbar** — neue Limit-Arten und Codename-Objekte mit echter Nutzung erscheinen mit ihrem Rohnamen, statt verworfen zu werden
+- **Unbekannte Limits bleiben sichtbar** — neue Limit-Arten in `limits[]` erscheinen mit ihrem Rohnamen, statt verworfen zu werden. Codename-Objekte außerhalb von `limits[]` werden ignoriert (das einzige, das je Werte trug, war eine Sonderaktion)
+- **Zuklappbar** — ein Klick auf die Überschrift klappt die Box auf eine Zeile zusammen; die Wahl bleibt im Browser gespeichert und übersteht Neuladen, Abmelden und erneutes Anmelden
 - **Ein Abruf, schonend für den Endpoint** — der Server fragt alle 5 Minuten ab (`CLAUDE_USAGE_POLL_MINUTES`, mindestens 2), weicht bei 429 exponentiell bis 60 Minuten aus, die Seite liest nur den Zwischenspeicher
 - **Token wird nie gespeichert** — bei jedem Abruf frisch aus der macOS-Keychain (oder `~/.claude/.credentials.json`) gelesen; nie geloggt, gespeichert oder erneuert. Ein abgelaufener Token zeigt „Claude Code einmal starten“
 - **Auch auf einer gehosteten Instanz** — der Sync-Agent liest die Limits auf deinem Rechner mit demselben Code und schickt nur Prozentwerte und Reset-Zeiten, nie einen Token; meldet er sich nicht, steht das da. Läuft lokal ein Tracker, übernimmt der Agent dessen Claude-Werte, statt den Endpoint doppelt abzufragen. Quelle für Claude ist der undokumentierte Endpoint `api.anthropic.com/api/oauth/usage`
@@ -205,7 +206,7 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **685 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **691 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 - **Projekt-Report (HTML + PDF)** — eigenständiger, druckoptimierter Report je Projekt: Kennzahlen, Kosten nach Komponente inklusive beider Cache-Schreibstufen, Kostenverlauf, Modell- und Sitzungstabellen sowie ein Abschnitt zum Rechenweg. Ohne CDN und ohne Chart-Bibliothek — Diagramme sind Inline-SVG. „PDF" läuft über den Druckdialog des Browsers
 - **„Wie wird gerechnet?"** — ein Rechenweg-Dialog hinter jeder Kennzahl: Formeln, der 5-Minuten-Deckel, die Preisquelle und was bewusst nicht erfasst wird
 - **Exakte Cache-Preise** — Cache-Schreibvorgänge werden nach Laufzeit abgerechnet (5 Min = 1,25× Eingabe, 1 Std = 2×). Claude Code schreibt überwiegend in den 1-Stunden-Cache; ein Pauschalsatz beziffert die Kosten rund 8,5 % zu niedrig
