@@ -689,6 +689,52 @@ describe('API endpoints', () => {
       }
     });
 
+    describe('installer autostart question', () => {
+      // The documented install is `curl … | bash`, so stdin IS the script. A
+      // plain `read` swallowed script text, and without a terminal the script
+      // died at the question — after it had already stopped the running agent.
+      const { spawn } = require('child_process');
+      const runAutostart = (env = {}) => new Promise((resolve) => {
+        const script = require('../server').generateInstallScript('http://example.invalid', 'k');
+        const from = script.indexOf('# The documented install is');
+        const to = script.indexOf('echo -e "$GREEN$BOLD=== Installation complete');
+        expect(from).toBeGreaterThan(-1);
+        expect(to).toBeGreaterThan(from);
+        const stubs = 'info(){ echo "INFO $1"; }; warn(){ :; }; ok(){ :; }; BLUE=; NC=; OS=Darwin; INSTALL_DIR=/tmp/x\n'
+          + 'setup_launchd(){ echo SETUP_LAUNCHD; }; setup_systemd(){ echo SETUP_SYSTEMD; }\n';
+        const file = path.join(tmpDir, 'autostart-' + Math.random().toString(36).slice(2) + '.sh');
+        fs.writeFileSync(file, stubs + script.slice(from, to) + '\necho "STDIN:$(cat)"\n');
+        // detached = a new session without a controlling terminal, like a
+        // tool or CI running the installer; /dev/tty cannot be opened there.
+        const child = spawn('bash', [file], { detached: true, env: { PATH: process.env.PATH, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+        let out = '';
+        child.stdout.on('data', d => { out += d; });
+        child.stderr.on('data', d => { out += d; });
+        child.stdin.end('nREST-OF-SCRIPT');
+        child.on('close', (code) => resolve({ code, out }));
+      });
+
+      it('sets up autostart without a terminal instead of dying at the question', async () => {
+        const { code, out } = await runAutostart();
+        expect(code).toBe(0);
+        expect(out).toContain('SETUP_LAUNCHD');
+        expect(out).toContain('No terminal to ask');
+      });
+
+      it('never reads the answer from stdin, which is the piped script', async () => {
+        // The "n" on stdin must neither decline autostart nor go missing.
+        const { out } = await runAutostart();
+        expect(out).toContain('STDIN:nREST-OF-SCRIPT');
+        expect(out).toContain('SETUP_LAUNCHD');
+      });
+
+      it('honours TOKEN_TRACKER_AUTOSTART', async () => {
+        expect((await runAutostart({ TOKEN_TRACKER_AUTOSTART: 'no' })).out).not.toContain('SETUP_LAUNCHD');
+        expect((await runAutostart({ TOKEN_TRACKER_AUTOSTART: 'no' })).out).toContain('Start manually');
+        expect((await runAutostart({ TOKEN_TRACKER_AUTOSTART: 'yes' })).out).toContain('SETUP_LAUNCHD');
+      });
+    });
+
     it('keeps the Claude usage poller off under the test runner', async () => {
       // It would otherwise call api.anthropic.com with the developer's real
       // OAuth token from the keychain on every test run.

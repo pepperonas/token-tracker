@@ -536,10 +536,29 @@ SERVICEEOF
   info "Remove:  systemctl --user disable --now token-tracker-sync-agent"
 }
 
+# The documented install is \`curl … | bash\`: stdin IS this script, so a plain
+# \`read\` would swallow script text instead of a key press. Ask the terminal
+# itself. Without one (no tty, run by a tool) default to yes: step 2 stopped
+# a running agent, and leaving it stopped was the bug. TOKEN_TRACKER_AUTOSTART
+# =yes|no decides without asking.
+ask_autostart() {
+  case "\${TOKEN_TRACKER_AUTOSTART:-}" in
+    [Yy]*|1|true) REPLY=y; return 0 ;;
+    [Nn]*|0|false) REPLY=n; return 0 ;;
+  esac
+  REPLY=""
+  if { exec 3</dev/tty; } 2>/dev/null; then
+    read -u 3 -p "\$(echo -e "\$BLUE▸\$NC") Set up autostart? [Y/n] " -n 1 -r || REPLY=""
+    exec 3<&-
+    echo
+  else
+    info "No terminal to ask — setting up autostart (TOKEN_TRACKER_AUTOSTART=no skips it)."
+  fi
+}
+
 echo ""
 if [ "\$OS" = "Darwin" ] || [ "\$OS" = "Linux" ]; then
-  read -p "\$(echo -e "\$BLUE▸\$NC") Set up autostart? [Y/n] " -n 1 -r
-  echo
+  ask_autostart
   if [[ ! \$REPLY =~ ^[Nn]\$ ]]; then
     if [ "\$OS" = "Darwin" ]; then
       setup_launchd
@@ -1924,4 +1943,4 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-module.exports = { server, startServer, aggregator };
+module.exports = { server, startServer, aggregator, generateInstallScript };

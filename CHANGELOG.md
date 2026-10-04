@@ -4,6 +4,20 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.7.1] — 2026-10-04
+
+### Fixed
+
+- **Das Installationsskript des Sync-Agents ließ den Agent gestoppt zurück.**
+  Es stoppt einen laufenden Agent, bevor es die Dateien ersetzt, und fragt am
+  Ende, ob der Autostart eingerichtet werden soll. Die Antwort las es von der
+  Standardeingabe — bei der dokumentierten Installation `curl … | bash` ist
+  das aber das Skript selbst: die Frage verschluckte Skripttext statt eine
+  Taste. Ohne Terminal (von einem Werkzeug gestartet) brach das Skript an der
+  Frage ab, und der Agent blieb aus. Jetzt fragt es das Terminal direkt,
+  richtet ohne Terminal den Autostart ein und lässt sich mit
+  `TOKEN_TRACKER_AUTOSTART=yes|no` vorab entscheiden
+
 ## [0.7.0] — 2026-10-04
 
 ### Added

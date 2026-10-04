@@ -5,12 +5,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.7.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.0">
-  <img src="https://img.shields.io/badge/lines_of_code-44.3k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44338 lines of code across 82 files">
+  <img src="https://img.shields.io/badge/version-v0.7.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.1">
+  <img src="https://img.shields.io/badge/lines_of_code-44.4k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44403 lines of code across 82 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-682_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="682 tests passing">
+  <img src="https://img.shields.io/badge/tests-685_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="685 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -205,7 +205,7 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **682 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **685 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 - **Projekt-Report (HTML + PDF)** — eigenständiger, druckoptimierter Report je Projekt: Kennzahlen, Kosten nach Komponente inklusive beider Cache-Schreibstufen, Kostenverlauf, Modell- und Sitzungstabellen sowie ein Abschnitt zum Rechenweg. Ohne CDN und ohne Chart-Bibliothek — Diagramme sind Inline-SVG. „PDF" läuft über den Druckdialog des Browsers
 - **„Wie wird gerechnet?"** — ein Rechenweg-Dialog hinter jeder Kennzahl: Formeln, der 5-Minuten-Deckel, die Preisquelle und was bewusst nicht erfasst wird
 - **Exakte Cache-Preise** — Cache-Schreibvorgänge werden nach Laufzeit abgerechnet (5 Min = 1,25× Eingabe, 1 Std = 2×). Claude Code schreibt überwiegend in den 1-Stunden-Cache; ein Pauschalsatz beziffert die Kosten rund 8,5 % zu niedrig
@@ -347,6 +347,12 @@ Der Sync Agent läuft auf dem Rechner des Users und überträgt lokale Claude-Co
 ```bash
 curl -sL "https://deine-domain.de/api/sync-agent/install.sh?key=DEIN_API_KEY" | bash
 ```
+
+Das Installationsskript fragt, ob der Autostart eingerichtet werden soll — am
+Terminal, nicht über die Standardeingabe (die ist das durchgereichte Skript).
+Ohne Terminal richtet es den Autostart standardmäßig ein, damit ein Update den
+Agent nie gestoppt zurücklässt. Vorab entscheiden mit
+`TOKEN_TRACKER_AUTOSTART=yes|no`, z. B. `… | TOKEN_TRACKER_AUTOSTART=no bash`.
 
 **Windows (PowerShell):**
 ```powershell

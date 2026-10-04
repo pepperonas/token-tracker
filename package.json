@@ -1,6 +1,6 @@
 {
   "name": "token-tracker",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Real-time token and cost analytics dashboard for AI coding assistants (Claude Code, OpenAI Codex, Google Antigravity)",
   "main": "server.js",
   "scripts": {
