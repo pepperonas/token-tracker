@@ -120,6 +120,35 @@ describe('codex usage — incremental reader', () => {
     expect(r.view().status).toBe('empty');
   });
 
+  it('keeps a per-limit series of value changes from the last 8 days', async () => {
+    const now = Date.now();
+    const iso = (ms) => new Date(ms).toISOString();
+    const R5 = Math.floor((now + 3600e3) / 1000), RW = Math.floor((now + 3 * 86400e3) / 1000);
+    write('2026/10/03/rollout-s.jsonl', [
+      rlLine(iso(now - 9 * 86400e3), CODEX_RL(1, 1, R5, RW)),            // older than 8 days: dropped
+      rlLine(iso(now - 3 * 3600e3), CODEX_RL(10, 20, R5, RW)),
+      rlLine(iso(now - 2 * 3600e3), CODEX_RL(10, 20, R5, RW)),           // unchanged: no new point
+      rlLine(iso(now - 3600e3), CODEX_RL(15, 22, R5, RW))
+    ].join('\n') + '\n');
+    const r = codex.createCodexUsage(dir);
+    await r.refresh();
+    expect(r.series('codex:300').map(p => p.percent)).toEqual([10, 15]);
+    expect(r.series('codex:10080').map(p => p.percent)).toEqual([20, 22]);
+    expect(r.series('codex:10080')[0]).toEqual({ at: Date.parse(iso(now - 3 * 3600e3)), percent: 20, resetsAt: RW * 1000 });
+    expect(r.series('nope:1')).toEqual([]);
+  });
+
+  it('merges the series of two files in time order', async () => {
+    const now = Date.now();
+    const iso = (ms) => new Date(ms).toISOString();
+    const RW = Math.floor((now + 3 * 86400e3) / 1000);
+    write('2026/10/03/rollout-x.jsonl', rlLine(iso(now - 2 * 3600e3), CODEX_RL(5, 30, RW, RW)) + '\n');
+    write('2026/10/03/rollout-y.jsonl', rlLine(iso(now - 5 * 3600e3), CODEX_RL(5, 25, RW, RW)) + '\n');
+    const r = codex.createCodexUsage(dir);
+    await r.refresh();
+    expect(r.series('codex:10080').map(p => p.percent)).toEqual([25, 30]);
+  });
+
   it('keeps a multi-byte character that straddles a read boundary', async () => {
     // With 3-byte reads every multi-byte character is split somewhere. A naive
     // per-chunk toString() turns "ü" into replacement characters — still valid
