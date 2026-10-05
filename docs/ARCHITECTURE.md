@@ -140,6 +140,7 @@ is added 1.6 s after load and never removed.
 | `rate_limit_events` | Rate-limit hits. |
 | `parse_state` | Byte offset, size and mtime per JSONL file. |
 | `project_aliases` | Merge map, per user. |
+| `usage_snapshots` | Usage-limit readings (percent, reset time) per user / provider / limit — only on change or every 30 min, kept 60 days. Feeds the forecast's calibration. |
 | `achievements` | Unlocked keys with their (backdated) unlock time. |
 | `users`, `user_sessions`, `devices` | Multi-user accounts, sessions and machines. |
 | `project_shares` | Share tokens. |
