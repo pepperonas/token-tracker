@@ -99,3 +99,84 @@ describe('usage forecast — bar markup', () => {
     expect(fn).toMatch(/classList\.toggle\('fc-danger', fcTone === 'danger'\)/);
   });
 });
+describe('usage forecast — chart', () => {
+  let F;
+  beforeEach(() => { F = loadFrontend(); F.setLang('de'); });
+  const series = {
+    actual: [['2026-10-03T23:00:00.000Z', 0], ['2026-10-06T23:00:00.000Z', 30]],
+    measured: [['2026-10-06T22:00:00.000Z', 29]],
+    forecast: [['2026-10-07T23:00:00.000Z', 45, 40, 60], ['2026-10-10T23:00:00.000Z', 112, 90, 140]],
+    ghosts: [{ start: '2026-09-26T23:00:00.000Z', points: [[0, 0], [10080, 80]] }]
+  };
+
+  it('night intervals cover 22:00–07:00 Berlin (summer time = UTC+2)', () => {
+    const s = Date.parse('2026-10-06T12:00:00Z'), e = Date.parse('2026-10-07T12:00:00Z');
+    expect(F.nightIntervals(s, e)).toEqual([[Date.parse('2026-10-06T20:00:00Z'), Date.parse('2026-10-07T05:00:00Z')]]);
+  });
+
+  it('builds plan, band, median, actual, measured, ghost and the run-out marker', () => {
+    const f = fc({ status: 'exhausts', series, atReset: { median: 112, low: 90, high: 140 },
+      exhaustsAt: { median: '2026-10-09T23:00:00.000Z', early: null, late: null } });
+    const cfg = F.buildUsageForecastConfig(f, { reducedMotion: true });
+    const roles = cfg.data.datasets.map(d => d._role);
+    expect(roles).toEqual(['ghost', 'plan', 'bandHigh', 'bandLow', 'median', 'actual', 'measured', 'exhaust']);
+    const by = (r) => cfg.data.datasets.find(d => d._role === r);
+    expect(by('plan').data).toEqual([{ x: Date.parse(W.start), y: 0 }, { x: Date.parse(W.end), y: 100 }]);
+    expect(by('median').data[0]).toEqual({ x: Date.parse('2026-10-06T23:00:00.000Z'), y: 30 });  // joins the actual line
+    expect(by('bandLow').fill).toBe('-1');
+    expect(by('ghost').data[1]).toEqual({ x: Date.parse(W.start) + 10080 * 60000, y: 80 });
+    expect(cfg.options.scales.y.max).toBe(140);
+    expect(cfg.options.scales.x.min).toBe(Date.parse(W.start));
+    expect(cfg.options.animation).toBe(false);
+    expect(cfg.options.plugins.usageFc.limit).toBe(100);
+    expect(cfg.plugins[0].id).toBe('usageFc');
+  });
+
+  it('stays at a 0–100 axis while nothing goes above 100', () => {
+    const cfg = F.buildUsageForecastConfig(fc({ series: { ...series, forecast: [['2026-10-10T23:00:00.000Z', 70, 60, 80]] } }), {});
+    expect(cfg.options.scales.y.max).toBe(100);
+    expect(cfg.data.datasets.some(d => d._role === 'exhaust')).toBe(false);
+  });
+
+  it('reuses the stashed box, so the chart keeps its canvas across a rebuild', () => {
+    const el = () => ({ textContent: '', attrs: {}, children: [], setAttribute(k, v) { this.attrs[k] = v; },
+      appendChild(c) { this.children.push(c); } });
+    const canvas = { id: 'usage-fc-claude-weekly-all', ...el() };
+    const legend = el(), notes = el();
+    const stashed = { dataset: { key: 'claude:weekly_all' },
+      querySelector: (q) => (q === 'canvas' ? canvas : q === '.usage-fc-legend' ? legend : notes) };
+    const rc = { stash: new Map([['claude:weekly_all', stashed]]), used: new Set(), pending: [] };
+    const f = fc({ series });
+    expect(F._usageFcBox('claude:weekly_all', f, rc)).toBe(stashed);
+    expect(rc.used.has('claude:weekly_all')).toBe(true);
+    expect(rc.pending).toEqual([{ canvasId: 'usage-fc-claude-weekly-all', forecast: f }]);
+  });
+
+  it('remembers open charts in localStorage', () => {
+    expect(F.usageFcOpenKeys()).toEqual([]);
+    expect(F.usageFcToggle('claude:weekly_all')).toBe(true);
+    expect(F.usageFcOpenKeys()).toEqual(['claude:weekly_all']);
+    expect(F.usageFcToggle('claude:weekly_all')).toBe(false);
+    F.localStorage.setItem('usageForecastOpen', 'garbage');
+    expect(F.usageFcOpenKeys()).toEqual([]);
+  });
+});
+
+describe('usage forecast — chart wiring', () => {
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'app.js'), 'utf8');
+  const charts = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'charts.js'), 'utf8');
+
+  it("keeps the open chart's canvas across a rebuild and destroys closed ones", () => {
+    const fn = app.slice(app.indexOf('function renderUsageLimits('), app.indexOf('async function loadPlanUsage('));
+    expect(fn).toMatch(/querySelectorAll\('\.usage-fc-box'\)/);       // stash before clearing
+    expect(fn.indexOf("querySelectorAll('.usage-fc-box')")).toBeLessThan(fn.indexOf("list.textContent = ''"));
+    expect(fn).toMatch(/destroyChart\(/);
+    expect(fn).toMatch(/createUsageForecastChart\(/);
+  });
+
+  it('draws through renderChart (in place, no new Chart per refresh)', () => {
+    const fn = charts.slice(charts.indexOf('function createUsageForecastChart('));
+    expect(fn.slice(0, 600)).toMatch(/renderChart\(/);
+    expect(fn.slice(0, 600)).not.toMatch(/new Chart\(/);
+  });
+});

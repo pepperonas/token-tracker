@@ -489,6 +489,34 @@ const DEMO_DATA = (() => {
 
   // --- Plan usage (Claude.ai plan limits) ---
   // Same shape as GET /api/claude-usage (lib/claude-usage.js createPoller().view()).
+  // Synthetic forecast for the demo (shape = /api/usage-limits forecast v1).
+  function demoForecast(pct, daysLeft, perDay, status) {
+    const HOUR = 3600000, DAY = 24 * HOUR;
+    const end = Date.now() + daysLeft * DAY, start = end - 7 * DAY, nowMs = Date.now();
+    const iso = (ms) => new Date(ms).toISOString();
+    const elapsedDays = (nowMs - start) / DAY;
+    const actual = [];
+    for (let t = start; t < nowMs; t += 6 * HOUR) actual.push([iso(t), Math.round(pct * (t - start) / (nowMs - start) * 10) / 10]);
+    actual.push([iso(nowMs), pct]);
+    const forecast = [];
+    for (let t = nowMs + 6 * HOUR; t <= end; t += 6 * HOUR) {
+      const inc = perDay * (t - nowMs) / DAY;
+      forecast.push([iso(t), Math.round((pct + inc) * 10) / 10, Math.round((pct + inc * 0.7) * 10) / 10, Math.round((pct + inc * 1.3) * 10) / 10]);
+    }
+    const med = pct + perDay * daysLeft;
+    const runOut = med >= 100 ? nowMs + ((100 - pct) / perDay) * DAY : null;
+    return {
+      version: 1, basis: 'calibrated', confidence: 'good', status,
+      window: { start: iso(start), end: iso(end) }, now: iso(nowMs),
+      pace: { planPercent: Math.round(elapsedDays / 7 * 1000) / 10, deltaPoints: Math.round((pct - elapsedDays / 7 * 100) * 10) / 10 },
+      atReset: { median: Math.round(med * 10) / 10, low: Math.round((pct + perDay * daysLeft * 0.7) * 10) / 10, high: Math.round((pct + perDay * daysLeft * 1.3) * 10) / 10 },
+      exhaustsAt: runOut ? { median: iso(runOut), early: iso(runOut - 0.4 * DAY), late: iso(runOut + 0.5 * DAY) } : null,
+      k: 0.0123, notes: ['chat_invisible'],
+      series: { actual, measured: actual.filter((_, i) => i % 2 === 1).slice(-6), forecast,
+        ghosts: [{ start: iso(start - 7 * DAY), points: Array.from({ length: 29 }, (_, i) => [i * 360, Math.min(95, i * 3.2)]) }] }
+    };
+  }
+
   const claudeUsageData = {
     enabled: true,
     status: 'ok',
@@ -501,9 +529,9 @@ const DEMO_DATA = (() => {
         { id: 'session', kind: 'session', name: 'session', group: 'session', percentUsed: 38,
           resetsAt: new Date(Date.now() + (3 * 60 + 24) * 60000).toISOString() },
         { id: 'weekly_all', kind: 'weekly_all', name: 'weekly_all', group: 'weekly', percentUsed: 56,
-          resetsAt: new Date(Date.now() + 4 * 86400000).toISOString() },
+          resetsAt: new Date(Date.now() + 4 * 86400000).toISOString(), forecast: demoForecast(56, 4, 14, 'exhausts') },
         { id: 'weekly_scoped:fable', kind: 'weekly_scoped', name: 'weekly_scoped', group: 'weekly', percentUsed: 41,
-          scopeLabel: 'Fable', resetsAt: new Date(Date.now() + 4 * 86400000).toISOString() }
+          scopeLabel: 'Fable', resetsAt: new Date(Date.now() + 4 * 86400000).toISOString(), forecast: demoForecast(41, 4, 7, 'reserve') }
       ],
       extraUsage: { enabled: false, used: 0, limit: 50, currency: 'EUR', percentUsed: 0, disabledReason: null },
       breakdown: [{ key: 'claude_code', label: 'Claude Code', percent: 91 }, { key: 'chat', label: 'Chat', percent: 9 }]

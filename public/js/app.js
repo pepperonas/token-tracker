@@ -1228,6 +1228,66 @@ function usageFcNotes(f) {
   return out;
 }
 
+const USAGE_FC_OPEN_KEY = 'usageForecastOpen';
+
+function usageFcOpenKeys() {
+  try {
+    const v = JSON.parse(localStorage.getItem(USAGE_FC_OPEN_KEY) || '[]');
+    return Array.isArray(v) ? v.filter(x => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function usageFcToggle(key) {
+  const s = new Set(usageFcOpenKeys());
+  if (s.has(key)) s.delete(key); else s.add(key);
+  try { localStorage.setItem(USAGE_FC_OPEN_KEY, JSON.stringify([...s])); } catch { /* storage blocked */ }
+  return s.has(key);
+}
+
+function _usageFcCanvasId(key) {
+  return 'usage-fc-' + key.replace(/[^a-z0-9]+/gi, '-');
+}
+
+/** The chart box of one limit; reuses the stashed box (same canvas) when there is one. */
+function _usageFcBox(key, f, rc) {
+  let box = rc.stash.get(key);
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'usage-fc-box';
+    box.dataset.key = key;
+    box.id = _usageFcCanvasId(key) + '-box';
+    const wrap = document.createElement('div');
+    wrap.className = 'usage-fc-canvas-wrap';
+    const canvas = document.createElement('canvas');
+    canvas.id = _usageFcCanvasId(key);
+    canvas.setAttribute('role', 'img');
+    wrap.appendChild(canvas);
+    const legend = document.createElement('div');
+    legend.className = 'usage-fc-legend';
+    const notes = document.createElement('div');
+    notes.className = 'usage-fc-notes';
+    box.append(wrap, legend, notes);
+  }
+  const legend = box.querySelector('.usage-fc-legend');
+  legend.textContent = '';
+  const items = [['actual', t('fcLegendActual')], ['measured', t('fcLegendMeasured')], ['plan', t('fcLegendPlan')],
+    ['median', t('fcLegendForecast')], ['band', t('fcLegendBand')]];
+  if (f.series && f.series.ghosts && f.series.ghosts.length) items.push(['ghost', t('fcLegendGhost')]);
+  for (const [role, text] of items) {
+    const it = document.createElement('span');
+    it.className = 'usage-fc-key usage-fc-key-' + role;
+    it.textContent = text;
+    legend.appendChild(it);
+  }
+  box.querySelector('.usage-fc-notes').textContent = usageFcNotes(f).join(' · ');
+  box.querySelector('canvas').setAttribute('aria-label', usageForecastSummary(f).text);
+  rc.used.add(key);
+  rc.pending.push({ canvasId: box.querySelector('canvas').id, forecast: f });
+  return box;
+}
+
 const USAGE_PROVIDERS = ['claude', 'codex', 'antigravity'];
 const USAGE_PROVIDER_NAMES = { claude: 'Claude', codex: 'Codex', antigravity: 'Antigravity' };
 let _usageLimits = null;
@@ -1337,7 +1397,7 @@ function _usageBarRow(l) {
   return row;
 }
 
-function _usageProviderGroup(provider, view, now) {
+function _usageProviderGroup(provider, view, now, rc = null) {
   const data = view.data || {};
   const limits = Array.isArray(data.limits) ? data.limits : [];
   const group = document.createElement('div');
@@ -1360,9 +1420,24 @@ function _usageProviderGroup(provider, view, now) {
   for (const l of limits) {
     const item = document.createElement('div');
     item.className = 'plan-usage-item';
-    const label = document.createElement('div');
-    label.className = 'plan-usage-label';
+    const f = l.forecast;
+    const key = provider + ':' + l.id;
+    const chartable = rc && f && f.series && ((f.series.forecast && f.series.forecast.length) || (f.series.actual && f.series.actual.length));
+    const open = chartable && usageFcOpenKeys().includes(key);
+    const label = document.createElement(chartable ? 'button' : 'div');
+    label.className = 'plan-usage-label' + (chartable ? ' plan-usage-fc-toggle' : '');
     label.textContent = usageRowLabel(provider, l);
+    if (chartable) {
+      label.type = 'button';
+      label.setAttribute('aria-expanded', String(!!open));
+      label.setAttribute('aria-controls', _usageFcCanvasId(key) + '-box');
+      label.title = t('fcChartToggle');
+      const caret = document.createElement('span');
+      caret.className = 'active-collapse-caret';
+      caret.setAttribute('aria-hidden', 'true');
+      label.appendChild(caret);
+      label.addEventListener('click', () => { usageFcToggle(key); renderUsageLimits(_usageLimits); });
+    }
     const meta = document.createElement('div');
     meta.className = 'plan-usage-meta';
     const bits = [];
@@ -1388,6 +1463,7 @@ function _usageProviderGroup(provider, view, now) {
       fcLine.textContent = sum.text;
       item.appendChild(fcLine);
     }
+    if (open) item.appendChild(_usageFcBox(key, f, rc));
     group.appendChild(item);
   }
   if (provider === 'claude' && limits.length === 0 && view.data) {
@@ -1459,9 +1535,20 @@ function renderUsageLimits(all, now = Date.now()) {
   const shown = USAGE_PROVIDERS.filter(p => all && all[p] && all[p].enabled);
   if (section) section.style.display = shown.length ? '' : 'none';
   initCollapsible(section, document.getElementById('plan-usage-toggle'), 'usageLimitsCollapsed');
+  // Open charts survive the 60-s rebuild: their boxes (and canvases) are
+  // stashed before the list is cleared and re-inserted, so renderChart updates
+  // the same Chart in place instead of creating a new one.
+  const rc = { stash: new Map(), used: new Set(), pending: [] };
   if (list) {
+    for (const box of list.querySelectorAll('.usage-fc-box')) rc.stash.set(box.dataset.key, box);
     list.textContent = '';
-    for (const p of shown) list.appendChild(_usageProviderGroup(p, all[p], now));
+    for (const p of shown) list.appendChild(_usageProviderGroup(p, all[p], now, rc));
+  }
+  for (const [key, box] of rc.stash) {
+    if (!rc.used.has(key)) destroyChart(box.querySelector('canvas').id);
+  }
+  for (const job of rc.pending) {
+    try { createUsageForecastChart(job.canvasId, job.forecast); } catch { /* a chart never breaks the box */ }
   }
   let anyChip = false;
   for (const p of USAGE_PROVIDERS) anyChip = _renderUsageChip(p, all ? all[p] : null, now) || anyChip;

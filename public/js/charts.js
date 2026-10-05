@@ -2615,3 +2615,164 @@ function createAnthropicKeyTimelineChart(canvasId, dailyTokensByKey, keyTotals) 
   });
   restoreChartLegendState(canvasId, chartInstances[canvasId]);
 }
+
+// --- Usage forecast window chart (overview box, weekly limits) ---
+
+const _FC_HOUR = 3600000;
+const _FC_DAY = 24 * _FC_HOUR;
+const _fcBerlinHour = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', hourCycle: 'h23' });
+
+/** [[from, to], …] of the hours 22:00–07:00 Europe/Berlin inside [startMs, endMs]. */
+function nightIntervals(startMs, endMs) {
+  const out = [];
+  let cur = null;
+  for (let t = Math.ceil(startMs / _FC_HOUR) * _FC_HOUR; t < endMs; t += _FC_HOUR) {
+    const h = Number(_fcBerlinHour.format(new Date(t)));
+    const night = h >= 22 || h < 7;
+    if (night && !cur) cur = [t, Math.min(t + _FC_HOUR, endMs)];
+    else if (night) cur[1] = Math.min(t + _FC_HOUR, endMs);
+    else if (cur) { out.push(cur); cur = null; }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+function _fcAlpha(hex, a) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+  return m ? `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${a})` : hex;
+}
+
+function _fcTick(ms, withTime) {
+  const lang = typeof currentLang !== 'undefined' && currentLang === 'de' ? 'de-DE' : 'en-GB';
+  const o = withTime
+    ? { timeZone: 'Europe/Berlin', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+    : { timeZone: 'Europe/Berlin', weekday: 'short', hour: '2-digit', hourCycle: 'h23' };
+  return new Intl.DateTimeFormat(lang, o).format(new Date(ms));
+}
+
+const USAGE_FC_PLUGIN = {
+  id: 'usageFc',
+  beforeDatasetsDraw(chart, _args, o) {
+    const a = chart.chartArea;
+    if (!o || !a) return;
+    const { x, y } = chart.scales;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = o.nightFill;
+    for (const [s, e] of o.nights || []) {
+      const l = Math.max(a.left, x.getPixelForValue(s)), r = Math.min(a.right, x.getPixelForValue(e));
+      if (r > l) ctx.fillRect(l, a.top, r - l, a.bottom - a.top);
+    }
+    const yl = y.getPixelForValue(o.limit);
+    if (y.max > o.limit) { ctx.fillStyle = o.redFill; ctx.fillRect(a.left, a.top, a.right - a.left, yl - a.top); }
+    ctx.strokeStyle = o.red;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(a.left, yl); ctx.lineTo(a.right, yl); ctx.stroke();
+    if (Number.isFinite(o.now)) {
+      const xn = x.getPixelForValue(o.now);
+      ctx.strokeStyle = o.nowColor;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(xn, a.top); ctx.lineTo(xn, a.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = o.nowColor;
+      ctx.font = '11px sans-serif';
+      ctx.fillText(o.nowLabel, xn + 4, a.top + 12);
+    }
+    ctx.restore();
+  },
+  afterDatasetsDraw(chart, _args, o) {
+    if (!o || !Number.isFinite(o.exhaustAt) || !chart.chartArea) return;
+    const { x, y } = chart.scales;
+    const ctx = chart.ctx;
+    const px = x.getPixelForValue(o.exhaustAt), py = y.getPixelForValue(o.limit);
+    ctx.save();
+    ctx.fillStyle = o.red;
+    ctx.font = '600 11px sans-serif';
+    ctx.textAlign = px > chart.chartArea.right - 90 ? 'right' : 'left';
+    ctx.fillText(o.exhaustLabel, px + (ctx.textAlign === 'right' ? -8 : 8), py - 8);
+    ctx.restore();
+  }
+};
+
+/** Chart.js config for one limit's window. Pure apart from t(); tested without a canvas. */
+function buildUsageForecastConfig(f, opts = {}) {
+  const s = f.series || {};
+  const start = Date.parse(f.window.start), end = Date.parse(f.window.end), now = Date.parse(f.now);
+  const accent = opts.accent || '#58a6ff', red = opts.red || '#f85149';
+  const muted = opts.muted || 'rgba(139,148,158,0.55)';
+  const pt = (r, i = 1) => ({ x: Date.parse(r[0]), y: r[i] });
+  const fc = s.forecast || [];
+  const actual = s.actual || [];
+  const last = actual.length ? actual[actual.length - 1] : null;
+  const peak = Math.max(100, ...fc.map(r => r[3]), ...actual.map(r => r[1]));
+  const yMax = peak > 100 ? Math.min(150, Math.ceil(peak / 10) * 10) : 100;
+  const ex = f.exhaustsAt && f.exhaustsAt.median ? Date.parse(f.exhaustsAt.median) : null;
+
+  const datasets = [];
+  for (const g of s.ghosts || []) {
+    datasets.push({ label: t('fcLegendGhost'), _role: 'ghost', data: g.points.map(([off, v]) => ({ x: start + off * 60000, y: v })),
+      borderColor: muted, borderWidth: 1, pointRadius: 0, fill: false });
+  }
+  datasets.push({ label: t('fcLegendPlan'), _role: 'plan', data: [{ x: start, y: 0 }, { x: end, y: 100 }],
+    borderColor: muted, borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false });
+  datasets.push({ label: t('fcLegendBand'), _role: 'bandHigh', data: fc.map(r => pt(r, 3)), borderWidth: 0, pointRadius: 0, fill: false });
+  datasets.push({ label: t('fcLegendBand'), _role: 'bandLow', data: fc.map(r => pt(r, 2)), borderWidth: 0, pointRadius: 0,
+    backgroundColor: _fcAlpha(accent, 0.16), fill: '-1' });
+  datasets.push({ label: t('fcLegendForecast'), _role: 'median', data: [...(last ? [pt(last)] : []), ...fc.map(r => pt(r, 1))],
+    borderColor: accent, borderDash: [5, 4], borderWidth: 2, pointRadius: 0, fill: false });
+  datasets.push({ label: t('fcLegendActual'), _role: 'actual', data: actual.map(r => pt(r)),
+    borderColor: accent, borderWidth: 2, pointRadius: 0, fill: false });
+  datasets.push({ label: t('fcLegendMeasured'), _role: 'measured', data: (s.measured || []).map(r => pt(r)),
+    showLine: false, pointRadius: 2.5, backgroundColor: accent, borderColor: accent });
+  if (ex !== null) {
+    datasets.push({ label: t('fcEmptyMarker'), _role: 'exhaust', data: [{ x: ex, y: 100 }],
+      showLine: false, pointRadius: 5, backgroundColor: red, borderColor: red });
+  }
+
+  return {
+    type: 'line',
+    data: { datasets },
+    plugins: [USAGE_FC_PLUGIN],
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: opts.reducedMotion ? false : { duration: 400 },
+      interaction: { mode: 'nearest', intersect: false },
+      scales: {
+        x: { type: 'linear', min: start, max: end,
+          ticks: { stepSize: _FC_DAY, callback: (v) => _fcTick(v, false), color: muted, maxRotation: 0 },
+          grid: { color: 'rgba(139,148,158,0.12)' } },
+        y: { min: 0, max: yMax, ticks: { stepSize: 25, callback: (v) => v + ' %', color: muted },
+          grid: { color: 'rgba(139,148,158,0.12)' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          filter: (item) => !['bandHigh', 'bandLow', 'ghost'].includes(item.dataset._role),
+          callbacks: {
+            title: (items) => (items.length ? _fcTick(items[0].parsed.x, true) : ''),
+            label: (item) => item.dataset.label + ': ' + Math.round(item.parsed.y * 10) / 10 + ' %'
+          }
+        },
+        usageFc: {
+          nights: nightIntervals(start, end), now, limit: 100, red,
+          redFill: _fcAlpha(red, 0.08), nightFill: 'rgba(127,127,127,0.07)', nowColor: muted,
+          nowLabel: t('fcNow'), exhaustAt: ex, exhaustLabel: ex === null ? '' : t('fcEmptyMarker') + ' ' + _fcTick(ex, true)
+        }
+      }
+    }
+  };
+}
+
+function createUsageForecastChart(canvasId, f) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  const css = getComputedStyle(document.documentElement);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cfg = buildUsageForecastConfig(f, {
+    reducedMotion: reduced,
+    accent: css.getPropertyValue('--accent').trim() || undefined,
+    red: css.getPropertyValue('--red').trim() || undefined
+  });
+  return renderChart(canvasId, canvas.getContext('2d'), cfg);
+}

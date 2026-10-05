@@ -922,6 +922,38 @@ html.js .uheat-anim .uheat-legend {
 .plan-usage-fc.danger { color: var(--red); font-weight: 600; }
 .usage-chip.fc-warn { border-color: var(--orange); }
 .usage-chip.fc-danger { border-color: var(--red); }
+.plan-usage-fc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  min-height: 28px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plan-usage-fc-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.plan-usage-fc-toggle[aria-expanded="false"] .active-collapse-caret { transform: rotate(-90deg); }
+.usage-fc-box { margin-top: 12px; }
+.usage-fc-canvas-wrap { position: relative; height: 220px; }
+.usage-fc-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 0.78em; color: var(--text-muted); }
+.usage-fc-key::before { content: ''; display: inline-block; width: 14px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid var(--accent); }
+.usage-fc-key-measured::before { width: 6px; height: 6px; border: none; border-radius: 50%; background: var(--accent); }
+.usage-fc-key-plan::before, .usage-fc-key-median::before { border-top-style: dashed; }
+.usage-fc-key-plan::before { border-top-color: var(--text-muted); }
+.usage-fc-key-band::before { height: 8px; border: none; background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.usage-fc-key-ghost::before { border-top: 1px solid var(--text-muted); }
+.usage-fc-notes { margin-top: 4px; font-size: 0.76em; color: var(--text-muted); }
+.usage-fc-notes:empty { display: none; }
+@media (max-width: 600px) {
+  .usage-fc-canvas-wrap { height: 180px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-usage-fc-toggle .active-collapse-caret { transition: none; }
+}
 .plan-usage-pct {
   font-size: 0.88em;
   font-weight: 600;
