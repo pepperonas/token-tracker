@@ -318,3 +318,58 @@ describe('usage-forecast — attachForecasts / snapshotsFromView', () => {
     expect(F.snapshotsFromView({ ...view([]), fetchedAt: null })).toEqual([]);
   });
 });
+
+describe('usage-forecast — review fixes', () => {
+  const NOW = W.start + 3 * DAY;
+  const noCost = { now: NOW, costIndexFor: () => ({ index: F.makeCostIndex([], Infinity), mapped: true }), snapshotsFor: () => [], seriesFor: () => [] };
+
+  it('refuses a window that ends further away than its own length (untrusted sync input)', () => {
+    // A hosted report with resetsAt in the year 9999 used to build ~3·10⁸ rows.
+    const t0 = Date.now();
+    const codex = F.forecastLimit('codex', { id: 'codex:x', limitId: 'codex', windowMinutes: 1e9, percentUsed: 50, resetsAt: '9999-01-01T00:00:00Z' }, noCost);
+    const claude = F.forecastLimit('claude', { id: 'weekly_all', kind: 'weekly_all', percentUsed: 50, resetsAt: new Date(NOW + 30 * DAY).toISOString() }, noCost);
+    expect(Date.now() - t0).toBeLessThan(200);
+    expect(codex.status).toBe('unknown');
+    expect(claude.status).toBe('unknown');
+    expect(F.windowOf('codex', { windowMinutes: 1e9, resetsAt: '2026-10-10T23:00:00Z' })).toBeNull();
+  });
+
+  it('an exhausted limit is "exhausts" even in the first 10 % of its window', () => {
+    const end = NOW + 4.8 * HOUR;     // 12 min into a 5-hour window: under 10 %
+    const f = F.forecastLimit('claude', { id: 'session', kind: 'session', percentUsed: 100, resetsAt: new Date(end).toISOString() }, noCost);
+    expect(f.status).toBe('exhausts');
+    expect(f.exhaustsAt.median).toBe(new Date(NOW).toISOString());
+  });
+
+  it('reaching 100 exactly at the reset is not "runs out before the reset"', () => {
+    const now = W.start + 3 * DAY;
+    const b = F.forecastBands({ pct: 60, window: W, now, increments: [(tau) => 10 * (tau - now) / DAY], stepMs: HOUR });
+    expect(b.atReset.median).toBe(100);
+    expect(b.exhaustsAt).toBeNull();
+  });
+
+  it('codex: replays past windows by their own reset time, not by period (windows are not periodic)', () => {
+    const r = W.start - 2 * DAY;          // a past window that ended two days before this one started
+    const series = [
+      { at: r - 6 * DAY, percent: 10, resetsAt: r },
+      { at: r - 3 * DAY, percent: 30, resetsAt: r },
+      { at: r - DAY, percent: 60, resetsAt: r },
+      { at: W.start + DAY, percent: 20, resetsAt: W.end }   // the running window: never a "past" one
+    ];
+    const weeks = F.codexWeeks({ window: W, now: NOW, series });
+    expect(weeks).toHaveLength(1);
+    expect(weeks[0](W.end)).toBe(50);
+    const f = F.forecastLimit('codex', { id: 'codex:10080', limitId: 'codex', windowMinutes: 10080, percentUsed: 20, resetsAt: new Date(W.end).toISOString() },
+      { ...noCost, seriesFor: () => series });
+    expect(f.basis).toBe('snapshots');
+    expect(f.series.ghosts).toHaveLength(1);
+    expect(f.series.ghosts[0].start).toBe(new Date(r - W.lenMs).toISOString());
+  });
+
+  it('the fallback k needs at least $1 of spend — cents would explode it', () => {
+    const ix = F.makeCostIndex([[W.start + HOUR, 0.05]]);
+    expect(F.calibrate({ snapshots: [], costIndex: ix, pct: 2, window: W, now: NOW }).k).toBeNull();
+    const ok = F.makeCostIndex([[W.start + HOUR, 4]]);
+    expect(F.calibrate({ snapshots: [], costIndex: ok, pct: 2, window: W, now: NOW }).k).toBeCloseTo(0.5, 5);
+  });
+});

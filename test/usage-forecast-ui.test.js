@@ -180,3 +180,12 @@ describe('usage forecast — chart wiring', () => {
     expect(fn.slice(0, 600)).not.toMatch(/new Chart\(/);
   });
 });
+
+describe('usage forecast — review fixes (UI)', () => {
+  it('an exhausted limit says "aufgebraucht", not "leer in ~0:00 h"', () => {
+    const F = loadFrontend(); F.setLang('de');
+    const r = F.usageForecastSummary(fc({ status: 'exhausts', exhaustsAt: { median: '2026-10-06T23:00:00.000Z', early: '2026-10-06T23:00:00.000Z', late: '2026-10-06T23:00:00.000Z' } }));
+    expect(r.text).toContain('aufgebraucht');
+    expect(r.text).not.toContain('leer');
+  });
+});

@@ -1176,7 +1176,9 @@ function usageForecastSummary(f) {
   else parts.push(d <= -1 ? t('fcReserve').replace('{0}', n(d)) : d >= 1 ? t('fcAhead').replace('{0}', n(d)) : t('fcOnPlan'));
   const lenMs = Date.parse(f.window && f.window.end) - Date.parse(f.window && f.window.start);
   const ex = f.exhaustsAt;
-  if (ex && ex.median) {
+  if (ex && ex.median && Date.parse(ex.median) <= Date.parse(f.now)) {
+    parts.push(t('fcUsedUp'));
+  } else if (ex && ex.median) {
     if (lenMs < 86400000) {
       parts.push(t('fcEmptyIn').replace('{0}', _fcDuration(Date.parse(ex.median) - Date.parse(f.now))));
     } else {

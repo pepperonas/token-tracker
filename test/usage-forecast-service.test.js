@@ -92,3 +92,23 @@ describe('usage-forecast-service', () => {
     expect(() => broken.svc.record(3, 'claude', views().claude)).not.toThrow();
   });
 });
+
+describe('usage-forecast-service — cache', () => {
+  it('caches only the forecasts: a fresh view status, time or provider always comes through', () => {
+    const svc = createForecastService({ getSnapshots: () => [], recordSnapshot: () => {}, codexSeries: null, getModelLabel: (m) => m, now: () => NOW });
+    const agg = fakeAgg([]);
+    const v1 = views(30);
+    svc.attach({ userId: 0, cacheKey: 'k', views: v1, aggregator: agg });
+    const n = agg.calls;
+    const v2 = views(30);
+    v2.claude = { ...v2.claude, status: 'stale', error: 'TOKEN_EXPIRED', fetchedAt: '2026-10-07T23:30:00.000Z' };
+    v2.antigravity = { enabled: true, status: 'ok', data: { limits: [], reached: 'EXHAUSTED' } };
+    const out = svc.attach({ userId: 0, cacheKey: 'k', views: v2, aggregator: agg });
+    expect(agg.calls).toBe(n);                                   // still a cache hit
+    expect(out.claude.status).toBe('stale');
+    expect(out.claude.error).toBe('TOKEN_EXPIRED');
+    expect(out.claude.fetchedAt).toBe('2026-10-07T23:30:00.000Z');
+    expect(out.antigravity.data.reached).toBe('EXHAUSTED');
+    expect(out.claude.data.limits[0].forecast.version).toBe(1);
+  });
+});

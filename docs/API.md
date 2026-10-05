@@ -196,7 +196,10 @@ reads it.
 
 - `pace.planPercent` = elapsed share of the window; `deltaPoints` = used − plan (positive = ahead).
 - `basis`: `calibrated` (Claude: k = percentage points per USD of the user's own Claude cost, from snapshot steps of ≥ 3 points, fallback `percent / cost so far`; the remaining window replays the same span of up to 4 complete past weeks), `snapshots` (Codex: its own percent series), `linear` (no past week, and always for the 5-hour window), `none` (`too_early`: under 10 % of the window elapsed, or nothing used).
-- `atReset` / `exhaustsAt`: median, min and max over the past weeks (linear: ±40 %). `exhaustsAt` is `null` when the median stays below 100 before the reset.
+- `atReset` / `exhaustsAt`: median, min and max over the past weeks (linear: ±40 %). `exhaustsAt` is `null` when the median stays below 100 before the reset (reaching 100 exactly at the reset does not count); at ≥ 100 % it is `now`. The fallback `k` needs at least $1 of spend in the window.
+- Codex windows are not periodic: past windows are found by their own reset time in the log series, not by end − n × length.
+- Guard: a window that ends further away than its own length (or a Codex window over 30 days) gets `status: 'unknown'` — hosted limits are untrusted input and every forecast loop runs to the reset.
+- The 60-s cache holds only the forecasts; status, error, `fetchedAt` and the other providers always come fresh.
 - `status`: `exhausts` > `idle` (0 %) > `ahead` (more than 5 points over plan) > `reserve`; `unknown` after a reset or without a percentage.
 - Snapshots behind the calibration live in `usage_snapshots` (numbers only, change or 30-min heartbeat, 60 days). Hosted they come from sync reports; readings dated more than 10 minutes in the future are refused, and pruning runs on the server clock.
 
