@@ -1145,6 +1145,89 @@ function usageStatusText(view) {
   return reason;
 }
 
+// --- Usage forecast (pace, value at reset, when a limit runs out) ---
+
+/** "Do ~14:20" in Europe/Berlin, minutes rounded to 10. */
+function _fcWhen(iso) {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '?';
+  const r = Math.round(ms / 600000) * 600000;
+  const lang = currentLang === 'de' ? 'de-DE' : 'en-GB';
+  const parts = new Intl.DateTimeFormat(lang, {
+    timeZone: USAGE_TZ, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date(r));
+  const get = (type) => (parts.find(p => p.type === type) || {}).value || '';
+  return get('weekday').replace('.', '') + ' ~' + get('hour') + ':' + get('minute');
+}
+
+/** "1:40 h" */
+function _fcDuration(ms) {
+  const min = Math.max(0, Math.round(ms / 60000));
+  return Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0') + ' h';
+}
+
+function usageForecastSummary(f) {
+  if (!f || f.status === 'unknown' || !f.pace) return { text: '', tone: '' };
+  const lang = currentLang === 'de' ? 'de-DE' : 'en-US';
+  const n = (v) => Math.round(Math.abs(v)).toLocaleString(lang);
+  const parts = [];
+  const d = f.pace.deltaPoints;
+  if (f.status === 'idle') parts.push(t('fcIdle'));
+  else parts.push(d <= -1 ? t('fcReserve').replace('{0}', n(d)) : d >= 1 ? t('fcAhead').replace('{0}', n(d)) : t('fcOnPlan'));
+  const lenMs = Date.parse(f.window && f.window.end) - Date.parse(f.window && f.window.start);
+  const ex = f.exhaustsAt;
+  if (ex && ex.median) {
+    if (lenMs < 86400000) {
+      parts.push(t('fcEmptyIn').replace('{0}', _fcDuration(Date.parse(ex.median) - Date.parse(f.now))));
+    } else {
+      let s = t('fcEmptyAt').replace('{0}', _fcWhen(ex.median));
+      if (ex.early && ex.late && ex.early !== ex.late) {
+        s += ' ' + t('fcEmptyRange').replace('{0}', _fcWhen(ex.early)).replace('{1}', _fcWhen(ex.late));
+      }
+      parts.push(s);
+    }
+  } else if (f.atReset && f.status !== 'idle') {
+    parts.push(t('fcAtReset').replace('{0}', n(f.atReset.median)));
+  } else if (Array.isArray(f.notes) && f.notes.includes('too_early')) {
+    parts.push(t('fcTooEarly'));
+  }
+  if (f.confidence === 'rough' && parts.length > 1) parts.push(t('fcRough'));
+  const tone = f.status === 'exhausts' ? 'danger' : f.status === 'ahead' ? 'warn'
+    : (f.status === 'reserve' || f.status === 'idle') ? 'ok' : '';
+  return { text: parts.join(' · '), tone };
+}
+
+function usageBarParts(pct, f) {
+  const used = typeof pct === 'number' ? Math.max(0, Math.min(pct, 100)) : 0;
+  const live = f && f.status !== 'unknown';
+  const plan = live && f.pace ? Math.max(0, Math.min(100, f.pace.planPercent)) : null;
+  const target = live && f.atReset && typeof f.atReset.median === 'number' ? f.atReset.median : null;
+  return {
+    used,
+    plan,
+    forecastTo: target === null ? null : Math.max(used, Math.min(target, 100)),
+    overflow: target !== null && target > 100
+  };
+}
+
+function usageWorstTone(view) {
+  const ls = view && view.enabled && view.data && Array.isArray(view.data.limits) ? view.data.limits : [];
+  if (ls.some(l => l.forecast && l.forecast.status === 'exhausts')) return 'danger';
+  if (ls.some(l => l.forecast && l.forecast.status === 'ahead')) return 'warn';
+  return '';
+}
+
+function usageFcNotes(f) {
+  if (!f) return [];
+  const out = [];
+  if (f.basis === 'linear') out.push(t('fcLinearNote'));
+  const notes = Array.isArray(f.notes) ? f.notes : [];
+  if (notes.includes('chat_invisible')) out.push(t('fcNoteChat'));
+  if (notes.includes('scope_unmapped')) out.push(t('fcNoteScope'));
+  if (notes.includes('few_weeks')) out.push(t('fcNoteFewWeeks'));
+  return out;
+}
+
 const USAGE_PROVIDERS = ['claude', 'codex', 'antigravity'];
 const USAGE_PROVIDER_NAMES = { claude: 'Claude', codex: 'Codex', antigravity: 'Antigravity' };
 let _usageLimits = null;
@@ -1221,6 +1304,9 @@ function _usagePctText(l) {
 
 function _usageBarRow(l) {
   const pct = l ? l.percentUsed : null;
+  const f = l ? l.forecast : null;
+  const parts = usageBarParts(pct, f);
+  const tone = usageForecastSummary(f).tone;
   const row = document.createElement('div');
   row.className = 'plan-usage-bar-row';
   const track = document.createElement('div');
@@ -1228,8 +1314,22 @@ function _usageBarRow(l) {
   const bar = document.createElement('div');
   const sev = usageSeverity(pct);
   bar.className = 'plan-usage-bar' + (sev ? ' ' + sev : '');
-  bar.style.width = (typeof pct === 'number' ? Math.max(0, Math.min(pct, 100)) : 0) + '%';
+  bar.style.width = parts.used + '%';
   track.appendChild(bar);
+  if (parts.forecastTo !== null && parts.forecastTo > parts.used) {
+    const hatch = document.createElement('div');
+    hatch.className = 'plan-usage-fc-hatch' + (tone && tone !== 'ok' ? ' ' + tone : '') + (parts.overflow ? ' overflow' : '');
+    hatch.style.left = parts.used + '%';
+    hatch.style.width = (parts.forecastTo - parts.used) + '%';
+    track.appendChild(hatch);
+  }
+  if (parts.plan !== null) {
+    const tick = document.createElement('div');
+    tick.className = 'plan-usage-fc-plan';
+    tick.style.left = parts.plan + '%';
+    tick.title = t('fcLegendPlan') + ': ' + Math.round(parts.plan) + ' %';
+    track.appendChild(tick);
+  }
   const pctEl = document.createElement('div');
   pctEl.className = 'plan-usage-pct';
   pctEl.textContent = _usagePctText(l);
@@ -1281,6 +1381,13 @@ function _usageProviderGroup(provider, view, now) {
     meta.textContent = bits.join(' · ');
     if (l.resetsAt) meta.title = l.resetsAt;
     item.append(label, meta, _usageBarRow(l));
+    const sum = usageForecastSummary(l.forecast);
+    if (sum.text) {
+      const fcLine = document.createElement('div');
+      fcLine.className = 'plan-usage-fc' + (sum.tone ? ' ' + sum.tone : '');
+      fcLine.textContent = sum.text;
+      item.appendChild(fcLine);
+    }
     group.appendChild(item);
   }
   if (provider === 'claude' && limits.length === 0 && view.data) {
@@ -1337,6 +1444,9 @@ function _renderUsageChip(provider, view, now) {
   if (rel) tip.push(rel);
   const st = usageProviderStatus(provider, view);
   if (st) tip.push(st);
+  const fcTone = usageWorstTone(view);
+  chip.classList.toggle('fc-warn', fcTone === 'warn');
+  chip.classList.toggle('fc-danger', fcTone === 'danger');
   chip.title = tip.join(' · ');
   chip.setAttribute('aria-label', chip.title);
   return true;

@@ -873,7 +873,8 @@ html.js .uheat-anim .uheat-legend {
   height: 8px;
   background: var(--border);
   border-radius: 4px;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
 }
 .plan-usage-bar {
   height: 100%;
@@ -884,6 +885,43 @@ html.js .uheat-anim .uheat-legend {
 }
 .plan-usage-bar.warn { background: var(--orange); }
 .plan-usage-bar.danger { background: var(--red); }
+/* Forecast on the bar: hatched until the expected value at reset, a tick at the plan position */
+.plan-usage-fc-hatch {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 55%, transparent) 0 3px, transparent 3px 6px);
+  border-radius: 0 4px 4px 0;
+}
+.plan-usage-fc-hatch.warn { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--orange) 60%, transparent) 0 3px, transparent 3px 6px); }
+.plan-usage-fc-hatch.danger { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--red) 60%, transparent) 0 3px, transparent 3px 6px); }
+.plan-usage-fc-hatch.overflow::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: -3px;
+  bottom: -3px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--red);
+}
+.plan-usage-fc-plan {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--text);
+  opacity: 0.75;
+}
+.plan-usage-fc { font-size: 0.82em; color: var(--text-muted); margin-top: 4px; }
+.plan-usage-fc.ok { color: var(--green); }
+.plan-usage-fc.warn { color: var(--orange); }
+.plan-usage-fc.danger { color: var(--red); font-weight: 600; }
+.usage-chip.fc-warn { border-color: var(--orange); }
+.usage-chip.fc-danger { border-color: var(--red); }
 .plan-usage-pct {
   font-size: 0.88em;
   font-weight: 600;
