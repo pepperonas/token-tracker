@@ -176,3 +176,145 @@ describe('usage-forecast — status', () => {
     expect(F.statusOf({ pct: 50, deltaPoints: 0, exhaustsAtMs: end + HOUR, end })).toBe('reserve');
   });
 });
+describe('usage-forecast — forecastLimit', () => {
+  const NOW = W.start + 3 * DAY;
+  const lim = (over = {}) => ({ id: 'weekly_all', kind: 'weekly_all', percentUsed: 30, resetsAt: new Date(END).toISOString(), ...over });
+  // $1 every hour for 5 weeks
+  const pts = [];
+  for (let t = W.start - 4 * W.lenMs; t < NOW; t += HOUR) pts.push([t + 1, 1]);
+  const ctxWith = (o = {}) => ({
+    now: NOW,
+    costIndexFor: () => ({ index: F.makeCostIndex(pts, W.start - 4 * W.lenMs), mapped: true }),
+    snapshotsFor: () => [],
+    seriesFor: () => [],
+    ...o
+  });
+
+  it('claude weekly: calibrated, four past weeks, full series', () => {
+    const f = F.forecastLimit('claude', lim(), ctxWith());
+    expect(f.version).toBe(1);
+    expect(f.basis).toBe('calibrated');
+    expect(f.window).toEqual({ start: new Date(W.start).toISOString(), end: new Date(END).toISOString() });
+    expect(f.k).toBeCloseTo(30 / 72, 4);                  // fallback: 30 % over $72 so far
+    // 4 days left at $24/day × k → +40 points
+    expect(f.atReset.median).toBeCloseTo(70, 0);
+    expect(f.status).toBe('reserve');
+    expect(f.series.ghosts).toHaveLength(3);
+    expect(f.series.actual[f.series.actual.length - 1][1]).toBe(30);
+    expect(f.notes).toContain('chat_invisible');
+  });
+
+  it('quiet past weeks forecast no growth', () => {
+    const recent = pts.filter(([t]) => t >= W.start);
+    const f = F.forecastLimit('claude', lim(), ctxWith({
+      costIndexFor: () => ({ index: F.makeCostIndex(recent, W.start - 4 * W.lenMs), mapped: true })
+    }));
+    expect(f.atReset.median).toBe(30);
+    expect(f.exhaustsAt).toBeNull();
+    expect(f.status).toBe('reserve');
+  });
+
+  it('falls back to linear without past weeks, and says so', () => {
+    const f = F.forecastLimit('claude', lim(), ctxWith({
+      costIndexFor: () => ({ index: F.makeCostIndex([], Infinity), mapped: true })
+    }));
+    expect(f.basis).toBe('linear');
+    expect(f.confidence).toBe('rough');
+    expect(f.atReset.median).toBeCloseTo(70, 5);          // 10/day × 4 days
+  });
+
+  it('is too early in the first 10 % of the window', () => {
+    const f = F.forecastLimit('claude', lim({ percentUsed: 5 }), ctxWith({
+      now: W.start + HOUR,
+      costIndexFor: () => ({ index: F.makeCostIndex([], Infinity), mapped: true })
+    }));
+    expect(f.basis).toBe('none');
+    expect(f.notes).toContain('too_early');
+    expect(f.atReset).toBeNull();
+  });
+
+  it('idle at 0 % without a cost history', () => {
+    const f = F.forecastLimit('claude', lim({ percentUsed: 0 }), ctxWith({
+      costIndexFor: () => ({ index: F.makeCostIndex([], Infinity), mapped: true })
+    }));
+    expect(f.status).toBe('idle');
+  });
+
+  it('marks an unmapped model scope', () => {
+    const f = F.forecastLimit('claude', lim({ id: 'weekly_scoped:x', kind: 'weekly_scoped', scopeLabel: 'X' }),
+      ctxWith({ costIndexFor: (s) => ({ index: F.makeCostIndex(pts, W.start - 4 * W.lenMs), mapped: s === null }) }));
+    expect(f.notes).toContain('scope_unmapped');
+  });
+
+  it('session: linear only, no series', () => {
+    const sEnd = NOW + 2 * HOUR;
+    const f = F.forecastLimit('claude', { id: 'session', kind: 'session', percentUsed: 66, resetsAt: new Date(sEnd).toISOString() }, ctxWith());
+    expect(f.basis).toBe('linear');
+    expect(f.series).toBeNull();
+    // 66 % in 3 h → 100 % after ~1:33 h, before the reset in 2 h. (60 % would hit
+    // 100 exactly AT the reset — that is not "runs out before the reset".)
+    expect(f.status).toBe('exhausts');
+    expect(Date.parse(f.exhaustsAt.median)).toBeLessThanOrEqual(sEnd);
+  });
+
+  it('unknown after the reset, for Codex "reset" windows and for Antigravity', () => {
+    expect(F.forecastLimit('claude', lim({ resetsAt: new Date(NOW - 1).toISOString() }), ctxWith()).status).toBe('unknown');
+    expect(F.forecastLimit('codex', { id: 'codex:10080', windowMinutes: 10080, reset: true, percentUsed: null, resetsAt: null }, ctxWith()).status).toBe('unknown');
+    expect(F.forecastLimit('antigravity', { kind: 'exhausted' }, ctxWith())).toBeNull();
+  });
+
+  it('codex weekly: forecast from its own series', () => {
+    const prevEnd = W.start;
+    const ws = prevEnd - W.lenMs;
+    const series = [
+      { at: ws + 2 * DAY, percent: 10, resetsAt: prevEnd },
+      { at: ws + 6 * DAY, percent: 60, resetsAt: prevEnd },
+      { at: W.start + DAY, percent: 20, resetsAt: END }
+    ];
+    const f = F.forecastLimit('codex', { id: 'codex:10080', limitId: 'codex', windowMinutes: 10080, percentUsed: 20, resetsAt: new Date(END).toISOString() },
+      ctxWith({ seriesFor: () => series }));
+    expect(f.basis).toBe('snapshots');
+    expect(f.k).toBeNull();
+    expect(f.atReset.median).toBe(70);                   // 20 + (60 − 10)
+    expect(f.series.measured).toEqual([[new Date(W.start + DAY).toISOString(), 20]]);
+    expect(f.series.ghosts).toHaveLength(1);
+    expect(f.series.ghosts[0].points[1]).toEqual([6 * 24 * 60, 60]);   // minutes after the past window's start
+  });
+});
+
+describe('usage-forecast — attachForecasts / snapshotsFromView', () => {
+  const view = (limits) => ({ enabled: true, status: 'ok', fetchedAt: '2026-10-05T10:00:00.000Z', data: { limits } });
+  const ctx = {
+    now: Date.parse('2026-10-05T10:00:00Z'),
+    costIndexFor: () => ({ index: F.makeCostIndex([], Infinity), mapped: true }),
+    snapshotsFor: () => [], seriesFor: () => []
+  };
+
+  it('adds forecast per limit, never touches antigravity, and one failure keeps the rest', () => {
+    const views = {
+      claude: view([
+        { id: 'weekly_all', kind: 'weekly_all', percentUsed: 30, resetsAt: '2026-10-10T23:00:00Z' },
+        { id: 'boom', kind: 'weekly_all', get percentUsed() { throw new Error('x'); }, resetsAt: '2026-10-10T23:00:00Z' }
+      ]),
+      antigravity: view([{ id: 'quota', kind: 'exhausted' }]),
+      codex: { enabled: false }
+    };
+    const out = F.attachForecasts(views, ctx);
+    expect(out.claude.data.limits[0].forecast.version).toBe(1);
+    expect(out.claude.data.limits[1].forecast).toBeUndefined();
+    expect(out.antigravity).toBe(views.antigravity);
+    expect(out.codex).toEqual({ enabled: false });
+    expect(views.claude.data.limits[0].forecast).toBeUndefined();   // input untouched
+  });
+
+  it('turns a view into numeric snapshots and skips what cannot be one', () => {
+    const s = F.snapshotsFromView(view([
+      { id: 'session', percentUsed: 4, resetsAt: '2026-10-05T12:00:00Z' },
+      { id: 'codex:10080', percentUsed: null, reset: true, resetsAt: null },
+      { id: 'x', percentUsed: 5, resetsAt: 'nope' }
+    ]));
+    expect(s).toEqual([{ limitId: 'session', at: Date.parse('2026-10-05T10:00:00Z'), percent: 4, resetsAt: Date.parse('2026-10-05T12:00:00Z') }]);
+    expect(F.snapshotsFromView({ enabled: false })).toEqual([]);
+    expect(F.snapshotsFromView({ ...view([]), fetchedAt: null })).toEqual([]);
+  });
+});
