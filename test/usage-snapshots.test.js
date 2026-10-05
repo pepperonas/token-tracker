@@ -61,6 +61,17 @@ describe('usage_snapshots', () => {
     expect(getUsageSnapshots(0, 'claude', 'late', 0)).toHaveLength(1);
   });
 
+  it('reads at most the newest SNAPSHOT_READ_CAP rows per limit, oldest first', () => {
+    const db = require('../lib/db');
+    const cap = db.SNAPSHOT_READ_CAP;
+    const stmt = getDB().prepare("INSERT INTO usage_snapshots (user_id, provider, limit_id, at, percent, resets_at) VALUES ('0', 'claude', 'flood', ?, ?, ?)");
+    getDB().transaction(() => { for (let i = 0; i < cap + 50; i++) stmt.run(T0 + i, i, R); })();
+    const rows = getUsageSnapshots(0, 'claude', 'flood', 0);
+    expect(rows).toHaveLength(cap);
+    expect(rows[0].at).toBe(T0 + 50);
+    expect(rows[rows.length - 1].at).toBe(T0 + cap + 49);
+  });
+
   it('stores nothing but numbers and ids', () => {
     const cols = getDB().prepare('PRAGMA table_info(usage_snapshots)').all().map(c => c.name);
     expect(cols).toEqual(['user_id', 'provider', 'limit_id', 'at', 'percent', 'resets_at']);

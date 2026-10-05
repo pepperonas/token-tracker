@@ -373,3 +373,30 @@ describe('usage-forecast — review fixes', () => {
     expect(F.calibrate({ snapshots: [], costIndex: ok, pct: 2, window: W, now: NOW }).k).toBeCloseTo(0.5, 5);
   });
 });
+
+describe('usage-forecast — bounded work on untrusted series', () => {
+  // A hosted user can post many reports with ever-new reset times. Grouping
+  // was quadratic and valueAt linear per forecast step: 20k points blocked
+  // the single Node process for about a second, 100k for minutes.
+  const MIN15 = 15 * MIN;
+  const now = W.start + 4 * DAY;
+  const flood = (n) => Array.from({ length: n }, (_, i) => {
+    const r = W.start - 27 * DAY + i * 6 * MIN;
+    return { at: r - DAY + i, percent: i % 100, resetsAt: r };
+  });
+
+  it('calibration over 20 000 distinct windows stays fast', () => {
+    const t0 = Date.now();
+    F.calibrate({ snapshots: flood(20000), costIndex: F.makeCostIndex([[W.start + 1, 5]]), pct: 30, window: W, now });
+    expect(Date.now() - t0).toBeLessThan(150);
+  });
+
+  it('codex replay over 20 000 points stays fast', () => {
+    // 20 000 distinct past windows (one point each) — the grouping is what blew up.
+    const series = flood(20000).map(s => ({ ...s, at: s.resetsAt - W.lenMs }));
+    const t0 = Date.now();
+    const weeks = F.codexWeeks({ window: W, now, series });
+    F.forecastBands({ pct: 30, window: W, now, increments: weeks, stepMs: MIN15 });
+    expect(Date.now() - t0).toBeLessThan(150);
+  });
+});

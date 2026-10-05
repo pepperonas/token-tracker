@@ -199,6 +199,7 @@ reads it.
 - `atReset` / `exhaustsAt`: median, min and max over the past weeks (linear: ±40 %). `exhaustsAt` is `null` when the median stays below 100 before the reset (reaching 100 exactly at the reset does not count); at ≥ 100 % it is `now`. The fallback `k` needs at least $1 of spend in the window.
 - Codex windows are not periodic: past windows are found by their own reset time in the log series, not by end − n × length.
 - Guard: a window that ends further away than its own length (or a Codex window over 30 days) gets `status: 'unknown'` — hosted limits are untrusted input and every forecast loop runs to the reset.
+- Work per request is bounded: at most the newest 5000 snapshots per limit are read, grouping by reset time is a sort + sweep and value lookups are binary searches (a flood of hosted reports with ever-new reset times made the old quadratic grouping block the process).
 - The 60-s cache holds only the forecasts; status, error, `fetchedAt` and the other providers always come fresh.
 - `status`: `exhausts` > `idle` (0 %) > `ahead` (more than 5 points over plan) > `reserve`; `unknown` after a reset or without a percentage.
 - Snapshots behind the calibration live in `usage_snapshots` (numbers only, change or 30-min heartbeat, 60 days). Hosted they come from sync reports; readings dated more than 10 minutes in the future are refused, and pruning runs on the server clock.

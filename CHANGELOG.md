@@ -4,6 +4,18 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.8.1] — 2026-10-05
+
+### Security
+
+- **Kein Lahmlegen mehr über eine Flut von Sync-Berichten.** Gehostet konnte
+  ein Nutzer mit vielen Berichten lauter verschiedene Reset-Zeiten anlegen;
+  die Prognose gruppierte die Snapshots quadratisch und suchte Werte linear je
+  Prognoseschritt — 20 000 Punkte blockierten den Server rund eine Sekunde,
+  100 000 minutenlang, für alle Nutzer. Gruppiert wird jetzt per Sortierung,
+  gesucht binär, und je Limit werden höchstens die neuesten 5000 Snapshots
+  gelesen (Gefunden von der Sicherheitsprüfung nach dem Deploy.)
+
 ## [0.8.0] — 2026-10-05
 
 ### Added
