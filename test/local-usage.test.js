@@ -149,6 +149,17 @@ describe('codex usage — incremental reader', () => {
     expect(r.series('codex:10080').map(p => p.percent)).toEqual([25, 30]);
   });
 
+  it('drops a value repeated across two files (dedupe on merge, not only per file)', async () => {
+    const now = Date.now();
+    const iso = (ms) => new Date(ms).toISOString();
+    const RW = Math.floor((now + 3 * 86400e3) / 1000);
+    write('2026/10/03/rollout-d1.jsonl', rlLine(iso(now - 5 * 3600e3), CODEX_RL(5, 40, RW, RW)) + '\n');
+    write('2026/10/03/rollout-d2.jsonl', rlLine(iso(now - 2 * 3600e3), CODEX_RL(5, 40, RW, RW)) + '\n');
+    const r = codex.createCodexUsage(dir);
+    await r.refresh();
+    expect(r.series('codex:10080').map(p => p.percent)).toEqual([40]);
+  });
+
   it('keeps a multi-byte character that straddles a read boundary', async () => {
     // With 3-byte reads every multi-byte character is split somewhere. A naive
     // per-chunk toString() turns "ü" into replacement characters — still valid
