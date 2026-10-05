@@ -54,6 +54,13 @@ describe('usage_snapshots', () => {
     expect(getUsageSnapshots(2, 'claude', 'weekly_all', 0)).toEqual([]);
   });
 
+  it('prunes by the server clock even when the incoming reading is itself old', () => {
+    recordUsageSnapshot(0, 'claude', 'x', T0 - 61 * DAY, 5, R, T0 - 61 * DAY);
+    recordUsageSnapshot(0, 'claude', 'late', T0 - 30 * DAY, 7, R, T0);   // a delayed report, received now
+    expect(getUsageSnapshots(0, 'claude', 'x', 0)).toEqual([]);
+    expect(getUsageSnapshots(0, 'claude', 'late', 0)).toHaveLength(1);
+  });
+
   it('stores nothing but numbers and ids', () => {
     const cols = getDB().prepare('PRAGMA table_info(usage_snapshots)').all().map(c => c.name);
     expect(cols).toEqual(['user_id', 'provider', 'limit_id', 'at', 'percent', 'resets_at']);
