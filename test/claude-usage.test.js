@@ -144,7 +144,7 @@ describe('claude-usage — readToken', () => {
 
 describe('claude-usage — poller', () => {
   const MIN = 60e3;
-  function makePoller({ responses, token = { token: 'sk-ant-oat01-FAKE' }, start = Date.parse('2026-10-04T10:00:00Z') }) {
+  function makePoller({ responses, token = { token: 'sk-ant-oat01-FAKE' }, start = Date.parse('2026-10-04T10:00:00Z'), onData }) {
     let now = start;
     const calls = [];
     const store = {};
@@ -155,10 +155,29 @@ describe('claude-usage — poller', () => {
       request: async (tok) => { calls.push(tok); return responses.shift(); },
       loadCache: () => store.cache || null,
       saveCache: (c) => { store.cache = c; },
+      onData,
       log: () => {}
     });
     return { p, calls, store, tick: (ms) => { now += ms; }, at: () => now };
   }
+
+  it('hands every successful result to onData, and nothing else', async () => {
+    const seen = [];
+    const t = makePoller({
+      responses: [{ status: 200, body: JSON.stringify(SAMPLE) }, { status: 429, headers: {} }],
+      onData: (data, at) => seen.push([data.limits.length > 0, at])
+    });
+    await t.p.fetchNow();
+    t.tick(10 * 60e3);
+    await t.p.fetchNow();
+    expect(seen).toEqual([[true, Date.parse('2026-10-04T10:00:00Z')]]);
+  });
+
+  it('a throwing onData does not break the poller', async () => {
+    const t = makePoller({ responses: [{ status: 200, body: JSON.stringify(SAMPLE) }], onData: () => { throw new Error('db'); } });
+    await t.p.fetchNow();
+    expect(t.p.view().status).toBe('ok');
+  });
 
   it('caches a successful fetch with a timestamp', async () => {
     const t = makePoller({ responses: [{ status: 200, body: JSON.stringify(SAMPLE) }] });

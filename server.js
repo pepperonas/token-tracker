@@ -9,7 +9,7 @@ const { parseAllCodex } = require('./lib/codex-parser');
 const { parseAllAntigravity } = require('./lib/antigravity-parser');
 const Aggregator = require('./lib/aggregator');
 const { AggregatorCache } = require('./lib/aggregator');
-const { calculateCost, getPricingMeta } = require('./lib/pricing');
+const { calculateCost, getPricingMeta, getModelLabel } = require('./lib/pricing');
 const pricingFetcher = require('./lib/pricing-fetcher');
 const {
   initDB, getDB, insertMessages, streamAllMessages, getParseState, setParseState, closeDB,
@@ -23,7 +23,8 @@ const {
   renameDevice, deleteDevice, regenerateDeviceKey, updateDeviceLastSync,
   getProjectShare, listProjectShares, createProjectShare, deleteProjectShare,
   createProjectAlias, deleteProjectAlias, getProjectAliasRows,
-  getProjectAliasMap
+  getProjectAliasMap,
+  recordUsageSnapshot, getUsageSnapshots
 } = require('./lib/db');
 const achievements = require('./lib/achievements');
 const { generateExportHTML } = require('./lib/export-html');
@@ -37,6 +38,7 @@ const claudeUsage = require('./lib/claude-usage');
 const codexUsage = require('./lib/codex-usage');
 const antigravityUsage = require('./lib/antigravity-usage');
 const usageLimitsStore = require('./lib/usage-limits-store');
+const usageForecastService = require('./lib/usage-forecast-service');
 const USAGE_LIMITS_KEY = 'usage_limits_';
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -96,11 +98,25 @@ anthropicApi.initAnthropicApi(require('./lib/db'));
 const CLAUDE_USAGE_ENABLED = !MULTI_USER
   && process.env.NODE_ENV !== 'test'
   && process.env.CLAUDE_USAGE_ENABLED !== 'false';
-const usagePoller = CLAUDE_USAGE_ENABLED ? claudeUsage.createDefaultPoller(require('./lib/db')) : null;
+const usagePoller = CLAUDE_USAGE_ENABLED
+  ? claudeUsage.createDefaultPoller(require('./lib/db'), {
+    // Local snapshots for the forecast's calibration (numbers only).
+    onData: (data, at) => forecastService.record(0, 'claude', { enabled: true, data, fetchedAt: new Date(at).toISOString() })
+  })
+  : null;
 // Codex and Antigravity limits come from their own local logs — no network,
 // no token. Same rule as above: this machine's state, so local single-user only.
 const codexLimits = MULTI_USER ? null : codexUsage.createCodexUsage(CODEX_SESSIONS_DIR);
 const antigravityLimits = MULTI_USER ? null : antigravityUsage.createAntigravityUsage(path.join(ANTIGRAVITY_DIR, 'log'));
+// Pace and forecast for the usage limits (lib/usage-forecast-service.js).
+// Locally Codex's own log series is the history; hosted, the snapshots the
+// sync agents' reports leave in usage_snapshots.
+const forecastService = usageForecastService.createForecastService({
+  getSnapshots: (userId, provider, limitId, sinceMs) => getUsageSnapshots(userId, provider, limitId, sinceMs),
+  recordSnapshot: recordUsageSnapshot,
+  codexSeries: codexLimits ? (key) => codexLimits.series(key) : null,
+  getModelLabel
+});
 // The predecessor (lib/plan-usage.js) could store the OAuth token encrypted in
 // the metadata table and cached results under plan_usage_*. Neither may
 // outlive it — the token must never be persisted.
@@ -763,6 +779,9 @@ const server = http.createServer((req, res) => {
           try { stored = JSON.parse(getMetadata(key) || 'null'); } catch { stored = null; }
           const merged = usageLimitsStore.mergeReport(stored, body.usageLimits, new Date().toISOString(), syncDevice ? syncDevice.name : null);
           setMetadata(key, JSON.stringify(merged));
+          for (const p of ['claude', 'codex']) {
+            forecastService.record(syncUser.id, p, usageLimitsStore.sanitizeView(body.usageLimits[p]));
+          }
         } catch (e) { console.error('Storing usage limits failed for user', syncUser.id, ':', e.message); }
       }
 
@@ -1783,18 +1802,30 @@ const server = http.createServer((req, res) => {
 
   // All providers at once — what the overview box and the header chips read.
   if (pathname === '/api/usage-limits' && req.method === 'GET') {
-    // Hosted: what this user's own sync agents reported, nothing read here.
+    let views;
+    let userId = 0;
+    let agg = aggregator;
     if (MULTI_USER) {
+      // Hosted: what this user's own sync agents reported, nothing read here.
       let stored = null;
       try { stored = JSON.parse(getMetadata(USAGE_LIMITS_KEY + user.id) || 'null'); } catch { stored = null; }
-      return sendJSON(res, usageLimitsStore.viewsFromStore(stored));
+      views = usageLimitsStore.viewsFromStore(stored);
+      userId = user.id;
+      agg = aggregatorCache.get(user.id, null);
+    } else {
+      const off = { enabled: false };
+      views = {
+        claude: usagePoller ? usagePoller.view() : off,
+        codex: codexLimits ? codexLimits.view() : off,
+        antigravity: antigravityLimits ? antigravityLimits.view() : off
+      };
     }
-    const off = { enabled: false };
-    return sendJSON(res, {
-      claude: usagePoller ? usagePoller.view() : off,
-      codex: codexLimits ? codexLimits.view() : off,
-      antigravity: antigravityLimits ? antigravityLimits.view() : off
-    });
+    try {
+      return sendJSON(res, forecastService.attach({ userId, cacheKey: 'u' + userId, views, aggregator: agg }));
+    } catch (e) {
+      console.error('Usage forecast failed:', e.message);
+      return sendJSON(res, views);
+    }
   }
 
   // Manual refresh: allowed at most every 2 minutes and never during a 429

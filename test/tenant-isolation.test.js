@@ -337,6 +337,35 @@ describe('tenant isolation (multi-user, over HTTP)', () => {
       expect(JSON.stringify(r.body)).not.toContain('secret');
     });
 
+    it("records the report's numbers as snapshots for the reporting account only", async () => {
+      const db = require('../lib/db');
+      const alice = db.findUserByGithubId(OWNER_GH_ID);
+      await sync({ messages: [], usageLimits: report });
+      const rows = db.getDB().prepare('SELECT user_id, provider, limit_id, percent FROM usage_snapshots').all();
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.every(r => r.user_id === String(alice.id))).toBe(true);
+      expect(rows).toContainEqual({ user_id: String(alice.id), provider: 'claude', limit_id: 'session', percent: 42 });
+    });
+
+    it('a report dated in the future is not stored and deletes nobody else', async () => {
+      const db = require('../lib/db');
+      const before = db.getDB().prepare('SELECT COUNT(*) AS n FROM usage_snapshots').get().n;
+      const future = { claude: { ...report.claude, fetchedAt: '2100-01-01T00:00:00Z',
+        data: { source: 'limits', limits: [{ id: 'weekly_all', kind: 'weekly_all', percentUsed: 1, resetsAt: '2100-01-05T00:00:00Z' }] } } };
+      expect((await sync({ messages: [], usageLimits: future })).status).toBe(200);
+      expect(db.getDB().prepare('SELECT COUNT(*) AS n FROM usage_snapshots').get().n).toBe(before);
+    });
+
+    it('attaches a forecast to a weekly limit in the owner\'s view', async () => {
+      const resetsAt = new Date(Date.now() + 3 * 86400000).toISOString();
+      await sync({ messages: [], usageLimits: { claude: { ...report.claude, fetchedAt: new Date().toISOString(),
+        data: { source: 'limits', limits: [{ id: 'weekly_all', kind: 'weekly_all', percentUsed: 30, resetsAt }] } } } });
+      const r = await asOwner('/api/usage-limits');
+      const f = r.body.claude.data.limits[0].forecast;
+      expect(f.version).toBe(1);
+      expect(f.pace.planPercent).toBeCloseTo(400 / 7, 0);
+    });
+
     it('refuses a sync without a valid device key', async () => {
       const r = await sync({ messages: [], usageLimits: report }, 'nope');
       expect(r.status).toBe(401);

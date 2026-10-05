@@ -931,3 +931,23 @@ describe('aggregator', () => {
     });
   });
 });
+
+describe('getCostPoints', () => {
+  it('returns Claude costs since a time, with an optional model filter and the all-time start', () => {
+    const agg = new Aggregator();
+    const m = (id, ts, model, provider, cost) => ({
+      id, timestamp: ts, model, provider, sessionId: 's', project: 'p',
+      inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreateTokens: 0, tools: [], toolCounts: {}, _testCost: cost
+    });
+    agg.addMessages([
+      m('a', '2026-10-01T00:00:00Z', 'claude-fable-5', 'claude'),
+      m('b', '2026-10-03T00:00:00Z', 'claude-opus-5-5', 'claude'),
+      m('c', '2026-10-03T00:00:00Z', 'gpt-5', 'codex')
+    ]);
+    const all = agg.getCostPoints(Date.parse('2026-10-02T00:00:00Z'));
+    expect(all.points.map(p => p[0])).toEqual([Date.parse('2026-10-03T00:00:00Z')]);
+    expect(all.firstMs).toBe(Date.parse('2026-10-01T00:00:00Z'));
+    const fable = agg.getCostPoints(0, (model) => model.includes('fable'));
+    expect(fable.points).toHaveLength(1);
+  });
+});
