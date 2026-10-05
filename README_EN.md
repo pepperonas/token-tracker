@@ -5,12 +5,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.7.2-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.7.2">
-  <img src="https://img.shields.io/badge/lines_of_code-44.5k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="44530 lines of code across 82 files">
+  <img src="https://img.shields.io/badge/version-v0.8.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.8.0">
+  <img src="https://img.shields.io/badge/lines_of_code-46.5k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="46459 lines of code across 89 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-691_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="691 tests passing">
+  <img src="https://img.shields.io/badge/tests-762_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="762 tests passing">
   <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -35,18 +35,18 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/API_routes-71-0969da?style=flat-square" alt="71 API routes">
-  <img src="https://img.shields.io/badge/DB_tables-12-0969da?style=flat-square" alt="12 database tables">
-  <img src="https://img.shields.io/badge/lib_modules-24-0969da?style=flat-square" alt="24 library modules">
-  <img src="https://img.shields.io/badge/charts-44-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="44 chart types">
+  <img src="https://img.shields.io/badge/DB_tables-13-0969da?style=flat-square" alt="13 database tables">
+  <img src="https://img.shields.io/badge/lib_modules-26-0969da?style=flat-square" alt="26 library modules">
+  <img src="https://img.shields.io/badge/charts-45-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="45 chart types">
   <img src="https://img.shields.io/badge/doc_pages-5-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="5 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-40-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="40 test files">
+  <img src="https://img.shields.io/badge/test_files-45-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="45 test files">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-5942_x_2-bf8700?style=flat-square" alt="5942 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-5988_x_2-bf8700?style=flat-square" alt="5988 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 
@@ -156,6 +156,8 @@ Dashboard for analyzing your AI coding token usage (Claude Code, OpenAI Codex, G
 - **The numbers Claude Code shows under `/usage`** — current session, week (all models), week per model (e.g. Fable), plus extra usage and the week split by area (Claude Code / chat / …)
 - **Overview box + header chip** — one row per limit with bar, percent and reset time (relative and absolute, Europe/Berlin); the chip shows the session percent on every tab and jumps to the box on click. States for loading, stale ("As of …") and error
 - **Unknown limits stay visible** — a new limit type in `limits[]` is shown with its raw name instead of being dropped. Codename objects outside `limits[]` are ignored (the only one that ever carried values was a one-off promotion)
+- **Forecast: am I on plan, and when does it run out?** — every Claude and Codex bar shows a tick where even use would stand and a hatched part up to the expected value at reset (red cap when it would run out, with the time and a range). Claude reports whole percentages only, so the tracker records them and calibrates them against your own Claude costs (points per USD); the forecast replays what you used in the same span of up to 4 past weeks. Codex brings its own history in its logs; without past weeks it falls back to a linear projection, labelled "rough estimate"
+- **Window chart for weekly limits** — a click on the row opens actual vs. plan line, the forecast with the range of past weeks, the past weeks as faint lines, nights shaded and the run-out marker; it stays open across reloads
 - **Collapsible** — a click on the heading folds the box to one line; the choice is kept in the browser and survives a reload, a logout and the next login
 - **One poller, gentle on the endpoint** — the server fetches every 5 minutes (`CLAUDE_USAGE_POLL_MINUTES`, minimum 2), backs off exponentially on 429 up to 60 minutes, and the page only ever reads the cached result
 - **Token never stored** — read fresh from the macOS keychain (or `~/.claude/.credentials.json`) on every fetch; never logged, persisted or refreshed. An expired token shows "start Claude Code once"
@@ -206,7 +208,7 @@ Dashboard for analyzing your AI coding token usage (Claude Code, OpenAI Codex, G
 - **Period comparison** — always-visible inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) instantly compares two periods side-by-side with 8 metrics (Tokens/Min, Lines/Hour, Cost/Line, Tokens/Line, Lines/Turn, Tools/Turn, I/O Ratio, Coding Hours), delta percentages, and color-coded improvement/regression indicators — one click to activate, no toggle needed
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs (Overview, Charts, Sessions, Projects, Models, Tools, Productivity, Achievements), 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts, touch-friendly tabs, and responsive chart rendering
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **691 automated tests** (unit + integration + multi-user API + achievements)
+- **762 automated tests** (unit + integration + multi-user API + achievements)
 - **Per-project report (HTML + PDF)** — standalone, print-optimised report per project: KPIs, cost split by component including both cache-write tiers, cost over time, model and session tables, and a methodology section. No CDN, no chart library — inline SVG only. "PDF" is the browser's own print dialog
 - **"How it adds up"** — a methodology dialog behind every KPI: formulas, the 5-minute idle cap, the price source, and what is deliberately not counted
 - **Accurate cache pricing** — cache writes billed by TTL tier (5 min = 1.25x input, 1 h = 2x). Claude Code writes mostly to the 1-hour cache; a flat rate understates cost by ~8.5%

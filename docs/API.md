@@ -163,6 +163,43 @@ Neither route ever returns or accepts a token.
 | `/api/claude-usage` | The poller's cached view: `{ enabled, status: loading\|ok\|stale\|error, error, data: { source, limits[], extraUsage, breakdown }, fetchedAt, lastAttemptAt, nextAttemptAt, intervalMinutes }`. Never triggers an upstream call. Each limit is `{ id, kind, name, group, percentUsed, resetsAt, scopeLabel, dollars? }`; unknown kinds keep their raw name. |
 | `POST /api/claude-usage/refresh` | Fetch now — at most every 2 minutes and never during a 429 backoff; otherwise returns the cached view with `throttled: true`. |
 
+### Forecast (`forecast`, since 0.8.0)
+
+Every Claude and Codex limit in `/api/usage-limits` may carry a `forecast`
+object (Antigravity never does — it records no percentages). It is computed
+on the server (`lib/usage-forecast.js`, wired by `lib/usage-forecast-service.js`)
+and cached 60 s per user; a failure for one limit only leaves that limit
+without the field. **The contract is additive and versioned** — Inspector Rust
+reads it.
+
+```jsonc
+"forecast": {
+  "version": 1,
+  "basis": "calibrated" | "snapshots" | "linear" | "none",
+  "confidence": "good" | "rough" | "none",
+  "status": "reserve" | "ahead" | "exhausts" | "idle" | "unknown",
+  "window": { "start": "ISO", "end": "ISO" },
+  "now": "ISO",
+  "pace": { "planPercent": 43.2, "deltaPoints": -7.1 },
+  "atReset": { "median": 78.4, "low": 61.0, "high": 96.2 } | null,
+  "exhaustsAt": { "median": "ISO", "early": "ISO", "late": "ISO|null" } | null,
+  "k": 0.0123 | null,                       // nur Claude, % je USD
+  "notes": ["scope_unmapped" | "too_early" | "few_weeks" | "chat_invisible"],
+  "series": {                               // nur Wochenlimits
+    "actual":   [["ISO", 12.3], …],         // ≤ 170, rekonstruiert/gemessen
+    "measured": [["ISO", 12], …],           // echte Snapshots im Fenster
+    "forecast": [["ISO", median, low, high], …], // stündlich ab now
+    "ghosts":   [{ "start": "ISO", "points": [[offsetMin, pct], …] }] // ≤ 3
+  }
+}
+```
+
+- `pace.planPercent` = elapsed share of the window; `deltaPoints` = used − plan (positive = ahead).
+- `basis`: `calibrated` (Claude: k = percentage points per USD of the user's own Claude cost, from snapshot steps of ≥ 3 points, fallback `percent / cost so far`; the remaining window replays the same span of up to 4 complete past weeks), `snapshots` (Codex: its own percent series), `linear` (no past week, and always for the 5-hour window), `none` (`too_early`: under 10 % of the window elapsed, or nothing used).
+- `atReset` / `exhaustsAt`: median, min and max over the past weeks (linear: ±40 %). `exhaustsAt` is `null` when the median stays below 100 before the reset.
+- `status`: `exhausts` > `idle` (0 %) > `ahead` (more than 5 points over plan) > `reserve`; `unknown` after a reset or without a percentage.
+- Snapshots behind the calibration live in `usage_snapshots` (numbers only, change or 30-min heartbeat, 60 days). Hosted they come from sync reports; readings dated more than 10 minutes in the future are refused, and pruning runs on the server clock.
+
 ## Export and maintenance
 
 | Route | Description |

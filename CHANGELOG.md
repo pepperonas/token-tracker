@@ -4,6 +4,31 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.8.0] — 2026-10-05
+
+### Added
+
+- **Hochrechnung bei den Nutzungslimits.** Jede Claude- und Codex-Zeile zeigt,
+  ob du im Plan liegst (Strich an der gleichmäßigen Position im Fenster) und wo
+  du beim Reset voraussichtlich landest (schraffiert) — oder wann das Limit leer
+  ist, mit Spanne. Die Kopfzeilen-Chips färben sich bernstein bzw. rot.
+- **Fenster-Grafik für Wochenlimits.** Ein Klick auf die Zeile öffnet Ist-Verlauf,
+  Plan-Linie, Prognose mit der Spanne der Vorwochen, die Vorwochen als blasse
+  Linien und die Nachtstunden; der Zustand bleibt im Browser gespeichert.
+- **So rechnet es:** Claude meldet nur ganze Prozent. Der Tracker schreibt die
+  Werte mit (`usage_snapshots`, nur bei Änderung, 60 Tage) und eicht sie gegen
+  deine eigenen Claude-Kosten (Prozentpunkte je USD); damit wird der Verlauf
+  fein, und die Prognose spielt ab, was du in den letzten bis zu 4 Wochen im
+  gleichen Abschnitt verbraucht hast. Codex bringt seinen Verlauf in den Logs
+  mit. Ohne Vorwochen: lineare Hochrechnung, als „grobe Schätzung" markiert.
+- `/api/usage-limits` liefert dafür je Limit ein Feld `forecast` (Version 1) —
+  auch für Inspector Rust.
+- **Gefunden beim Bauen:** Das Aufräumen alter Snapshots hätte sich am
+  Zeitstempel der Lesung orientiert. Gehostet kommt der aus dem Bericht eines
+  Sync-Agents — ein Bericht mit Datum 2100 hätte die Snapshots aller anderen
+  Nutzer gelöscht. Aufgeräumt wird jetzt nach der Serveruhr, Lesungen aus der
+  Zukunft werden abgewiesen.
+
 ## [0.7.2] — 2026-10-05
 
 ### Added
