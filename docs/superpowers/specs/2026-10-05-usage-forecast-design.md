@@ -38,6 +38,10 @@ Fenster-Grafik (Wochenlimits).
 
 ## Rechenmodell (`lib/usage-forecast.js`, rein, Uhr injizierbar)
 
+Verdrahtet wird es von `lib/usage-forecast-service.js` (Aggregator-Kosten,
+Snapshot-Tabelle, Codex-Logreihe, 60-s-Zwischenspeicher); `server.js` ruft
+nur `attach()` und `record()`.
+
 Begriffe: Fenster = `[start, end)`, `end = resetsAt`, `start = end − Länge`
 (Claude: `session` 300 min, `weekly_*` 10080 min; Codex: `windowMinutes`).
 
@@ -144,8 +148,9 @@ resets_at, PRIMARY KEY (user_id, provider, limit_id, at))`, Index auf
 - Geschrieben, wenn sich `percent` oder `resets_at` gegenüber der letzten Zeile
   dieses Limits ändert, sonst höchstens alle 30 min (Lebenszeichen).
 - Aufbewahrung 60 Tage, Aufräumen beim Einfügen.
-- Quellen: lokaler Claude-Abruf (Ergebnis-Hook des Pollers), lokale
-  Codex-Ansicht (höchstens alle 5 min), gehostet `mergeReport` des Sync-Agents.
+- Quellen: lokaler Claude-Abruf (Ergebnis-Hook des Pollers) und gehostet
+  der Sync-Handler (Claude und Codex). Lokal braucht Codex keine Snapshots —
+  sein Verlauf kommt direkt aus den Logs (s. u.).
   Nur Zahlen und Zeiten — kein Token, kein Rohtext (Pin).
 - **Codex rückwirkend:** `createCodexUsage` behält je `limitId` die Folge
   `(at, used_percent, window_minutes, resets_at)` der letzten 8 Tage
