@@ -201,7 +201,7 @@ const achievementsDb = { getUnlockedAchievements, unlockAchievementsBatch, unloc
 // days. v3 (2026-08-30): 500 new definitions plus corrected thresholds on
 // eight previously unreachable ones — bumping the version re-migrates existing
 // data once so unlock dates land on the day each condition was really met.
-const ACH_BACKFILL_FLAG = 'ach_backfill_v3_';
+const ACH_BACKFILL_FLAG = 'ach_backfill_v4_';
 
 // 5. Check achievements on startup (single-user). A FRESH install with an
 // existing Claude history would bulk-unlock hundreds of achievements stamped

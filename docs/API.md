@@ -72,7 +72,7 @@ endpoint's allowlist.
 
 | Route | Description |
 |---|---|
-| `/api/achievements` | All 1,200 with unlock status, tier, points and unlock date. |
+| `/api/achievements` | All 1,224 active achievements with unlock status, tier, points and unlock date. |
 | `POST /api/achievements/recompute` | Replays the history and rewrites unlock dates. **No UI** — the automatic paths (fresh install, `ACH_BACKFILL_FLAG` bump) cover every normal case; this is the maintainer's recovery path. |
 
 ## Pricing

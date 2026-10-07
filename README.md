@@ -11,13 +11,13 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.8.1-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.8.1">
-  <img src="https://img.shields.io/badge/lines_of_code-46.6k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="46649 lines of code across 89 files">
+  <img src="https://img.shields.io/badge/version-v0.9.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.9.0">
+  <img src="https://img.shields.io/badge/lines_of_code-48.8k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="48798 lines of code across 93 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-772_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="772 tests passing">
-  <img src="https://img.shields.io/badge/achievements-1200-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1200 achievements">
+  <img src="https://img.shields.io/badge/tests-783_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="783 tests passing">
+  <img src="https://img.shields.io/badge/achievements-1224-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1224 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
 
@@ -42,17 +42,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/API_routes-71-0969da?style=flat-square" alt="71 API routes">
   <img src="https://img.shields.io/badge/DB_tables-13-0969da?style=flat-square" alt="13 database tables">
-  <img src="https://img.shields.io/badge/lib_modules-26-0969da?style=flat-square" alt="26 library modules">
+  <img src="https://img.shields.io/badge/lib_modules-27-0969da?style=flat-square" alt="27 library modules">
   <img src="https://img.shields.io/badge/charts-45-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="45 chart types">
-  <img src="https://img.shields.io/badge/doc_pages-5-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="5 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-45-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="45 test files">
+  <img src="https://img.shields.io/badge/doc_pages-8-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="8 documentation pages">
+  <img src="https://img.shields.io/badge/test_files-46-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="46 test files">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-5990_x_2-bf8700?style=flat-square" alt="5990 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-6296_x_2-bf8700?style=flat-square" alt="6296 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 
@@ -146,7 +146,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **Period comparison** — inline pill selector (Off / Prev. Period / Last 7d / 30d / 90d / Custom) compares two periods side-by-side with 8 metrics, delta %, and color-coded indicators
 - **HTML export** — mobile-responsive interactive snapshot with Chart.js, 8 tabs, 12+ charts, and sortable tables. Optimized for phones (412px+) with adaptive layouts
 - **Global comparison** — compare your stats against the average of all users (multi-user mode)
-- **1200 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
+- **1224 achievements** — gamification system across 14 categories with 5 tiers, tier-based points, timeline chart, daily unlock stats, and real-time unlock notifications via SSE
 - **Lines of Code tracking** — Write (green), Edit (yellow), Delete (red) with adaptive hourly/daily chart
 - **Usage heatmap** — weekday × hour grid in the overview showing token-usage intensity (rows Mon→Sun for multi-day ranges, a single 24-hour strip for one day), cache-toggle aware with per-cell tooltips
 - **Weekday-aware dates** — chart axis labels and the period-range header show the weekday (e.g. `Sa 06-27`, `Thu 05/28/2026 – Sat 06/27/2026`)
@@ -158,7 +158,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **772 automated tests** — unit, integration, and multi-user API tests
+- **783 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots
@@ -174,7 +174,7 @@ Open [http://localhost:5010](http://localhost:5010)
 | ![Models](public/screenshots/07-models.png) | ![Insights](public/screenshots/08-insights.png) |
 | **Models** — model usage over time, per-model tokens and cost | **Insights** — cost breakdown, cumulative cost, weekday activity, cache efficiency |
 | ![Productivity](public/screenshots/09-productivity.png) | ![Achievements](public/screenshots/10-achievements.png) |
-| **Productivity** — efficiency metrics with period comparison | **Achievements** — 1200 achievements across 14 categories, unlocked with historical dates |
+| **Productivity** — efficiency metrics with period comparison | **Achievements** — 1224 achievements across 14 categories, unlocked with historical dates |
 
 ### Mobile (iPhone 16 — 393px)
 

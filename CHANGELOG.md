@@ -4,6 +4,19 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.9.0] — 2026-10-07
+
+### Added
+
+- 74 Achievements für Arbeitsrhythmus, Code-und-Tool-Tage, Projektpflege und tiefe Sitzungen mit mehreren Modellen; historische Freischaltungen werden rückdatiert.
+- Reproduzierbarer Audit des bisherigen und des aktiven Achievement-Katalogs.
+
+### Changed
+
+- 50 doppelte Achievement-Keys stillgelegt; bestehende Freischaltdaten gehen auf den jeweils älteren Key über. Das Raster zeigt 1224 aktive Achievements aus 1274 historischen Definitionen.
+- Stufen, doppelte Namen und acht veraltete Beschreibungen berichtigt. Der Backfill läuft einmalig mit Version 4 erneut.
+- Demo-Katalog und Badges an den aktiven Bestand angeglichen.
+
 ## [0.8.1] — 2026-10-05
 
 ### Security

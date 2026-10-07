@@ -179,7 +179,7 @@ Web *fetch* is free beyond the tokens it brings in and needs no handling.
 
 ## Achievements
 
-1,200 definitions in two waves.
+1,274 definitions in three waves, including 50 retired keys; 1,224 active achievements.
 
 **Wave 1** (700) covers the ramp from first prompt to heavy daily use.
 
@@ -189,6 +189,13 @@ of the real history (208 active days, 1,192 messages and 388 M tokens per active
 day). The nearest sit about three weeks of work away, the furthest about twenty
 months. All 500 were locked the day they shipped, and a test pins that baseline
 so the claim stays checkable.
+
+**Wave 3** (74, added 2026-10-07) measures weekly and monthly rhythm,
+code-and-tool days, project lifespan, and deep sessions using multiple models.
+It uses `activeMin` for work time and counts all providers through the global
+aggregator. All 74 were locked against the measured 246-day baseline. The
+[audit and horizon report](achievements-wave3-2026-10.md) records the thresholds
+and the 50 historical keys retired as semantic duplicates.
 
 Unlock dates are **backdated**: the history is replayed day by day so an
 achievement is stamped with the day its condition was first met, not the day the

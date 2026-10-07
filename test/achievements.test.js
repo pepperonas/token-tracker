@@ -47,13 +47,13 @@ function createMockDb() {
 
 describe('Achievements', () => {
   describe('ACHIEVEMENTS array', () => {
-    it('should have exactly 1200 achievements', () => {
-      expect(ACHIEVEMENTS.length).toBe(1200);
+    it('should have exactly 1274 historical and current definitions', () => {
+      expect(ACHIEVEMENTS.length).toBe(1274);
     });
 
     it('should have unique keys', () => {
       const keys = ACHIEVEMENTS.map(a => a.key);
-      expect(new Set(keys).size).toBe(1200);
+      expect(new Set(keys).size).toBe(1274);
     });
 
     it('should have valid tiers', () => {
@@ -329,6 +329,19 @@ describe('Achievements', () => {
       expect(seen.appended).toBe(0);
     });
 
+    it('preserves retired rows and gives successors their original date during backfill', () => {
+      const agg = new Aggregator();
+      agg.addMessages([mkMsg('one', 2026, 0, 5, 10, 0)]);
+      const oldDate = '2025-06-01T12:00:00Z';
+      let entries;
+      backfillAchievements(agg, 0, {
+        getUnlockedAchievements: () => [{ achievement_key: 'tl_read_50k', unlocked_at: oldDate }],
+        replaceAchievementsForUser: (_uid, next) => { entries = next; }
+      });
+      expect(entries.find(e => e.key === 'tl_read_50k').at).toBe(oldDate);
+      expect(entries.find(e => e.key === 'tool_read_50k').at).toBe(oldDate);
+    });
+
     it('does nothing (and does not wipe) when there is no history', () => {
       const seen = { replaced: null, cleared: 0 };
       const res = backfillAchievements(new Aggregator(), 0, {
@@ -338,6 +351,7 @@ describe('Achievements', () => {
       expect(res.unlocked).toBe(0);
       expect(res.days).toBe(0);
       expect(seen.cleared).toBe(0);
+      expect(seen.replaced).toBeNull();
     });
 
     it('gates ratio achievements by tier-scaled active days (3/5/7/14/30)', () => {
@@ -387,13 +401,14 @@ describe('Achievements', () => {
       }
     });
 
-    it('should return all 1200 achievements with unlock status', () => {
+    it('returns only active achievements with unlock status', () => {
       const db = createMockDb();
       db.unlockAchievementsBatch(0, ['tokens_1k', 'sessions_1']);
 
       const response = getAchievementsResponse(0, db);
 
-      expect(response.length).toBe(1200);
+      expect(response.length).toBe(ACHIEVEMENTS.filter(a => !a.retired).length);
+      expect(response.some(a => a.key === 'tl_read_50k')).toBe(false);
 
       const tokens1k = response.find(a => a.key === 'tokens_1k');
       expect(tokens1k.unlocked).toBe(true);
@@ -402,6 +417,32 @@ describe('Achievements', () => {
       const tokens10k = response.find(a => a.key === 'tokens_10k');
       expect(tokens10k.unlocked).toBe(false);
       expect(tokens10k.unlockedAt).toBeNull();
+    });
+
+    it('shows a retired-only unlock on its successor with the old date and one score', () => {
+      const date = '2025-06-01T12:00:00Z';
+      const rows = [{ achievement_key: 'tl_read_50k', unlocked_at: date }];
+      const db = { getUnlockedAchievements: () => rows };
+      const response = getAchievementsResponse(0, db);
+      const successor = response.find(a => a.key === 'tool_read_50k');
+      expect(successor.unlockedAt).toBe(date);
+      expect(response.some(a => a.key === 'tl_read_50k')).toBe(false);
+      expect(response.filter(a => a.unlocked).reduce((sum, a) => sum + a.points, 0)).toBe(successor.points);
+    });
+
+    it('migrates a retired-only unlock without a new notification', () => {
+      const date = '2025-06-01T12:00:00Z';
+      const rows = [{ achievement_key: 'tl_read_50k', unlocked_at: date }];
+      const saved = [];
+      const db = {
+        getUnlockedAchievements: () => rows,
+        unlockAchievementsBatchAt: (_user, entries) => saved.push(...entries),
+        unlockAchievementsBatch: () => {}
+      };
+      const newKeys = checkAchievements(createMockAggregator(), 0, db);
+      expect(saved).toEqual([{ key: 'tool_read_50k', at: date }]);
+      expect(newKeys).not.toContain('tool_read_50k');
+      expect(newKeys).not.toContain('tl_read_50k');
     });
 
     it('should include category and tier for each achievement', () => {
@@ -420,7 +461,7 @@ describe('Achievements', () => {
   });
 });
 
-describe('achievement catalogue (1200 definitions)', () => {
+describe('achievement catalogue (1274 definitions)', () => {
   const { ACHIEVEMENTS } = require('../lib/achievements');
   const fs = require('fs');
   const path = require('path');
@@ -537,7 +578,7 @@ describe('achievement catalogue (1200 definitions)', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'achievements.js'), 'utf8');
     const waveTwoStart = src.indexOf('Wave 2 — 500 achievements');
     const waveTwoKeys = new Set(
-      src.slice(waveTwoStart, src.indexOf('\n];'))
+      src.slice(waveTwoStart, src.indexOf('\n].map(', waveTwoStart))
         .split('\n').filter(l => /^\s*\{\s*key:/.test(l))
         .map(l => l.match(/key: '([^']+)'/)[1])
     );
@@ -554,7 +595,7 @@ describe('achievement catalogue (1200 definitions)', () => {
     // durationMin is last-minus-first message including idle; on real data it
     // ran 36x higher than actual work. Wave 2 must not inherit that.
     const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'achievements.js'), 'utf8');
-    const arrayEnd = src.indexOf('\n];');
+    const arrayEnd = src.indexOf('\n].map(', src.indexOf('Wave 2 — 500 achievements'));
     const waveTwo = src.slice(src.indexOf('Wave 2 — 500 achievements'), arrayEnd);
     // Strip comments first: the block explains WHY durationMin is avoided, so a
     // raw text search matches the explanation and passes/fails on prose.

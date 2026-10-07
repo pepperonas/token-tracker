@@ -57,7 +57,8 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/aggregator.js` | Every analytics answer. Pre-computed maps plus per-message cached derived values. |
 | `lib/pricing.js` | Price resolution: epoch → recorded price history (by message time) → LiteLLM override → built-in fallback → default. Cost calculation including both cache-write tiers. |
 | `lib/pricing-fetcher.js` | Daily LiteLLM refresh, cached in the DB so the first calculation after a restart is already fresh; records every price change in the price history so past costs stay fixed. |
-| `lib/achievements.js` | 1,200 definitions, the stats they read, and the historical backfill. |
+| `lib/achievements.js` | 1,274 definitions (1,224 active), the stats they read, and the historical backfill. |
+| `lib/achievement-tier-corrections.js` | Tier corrections for active achievements after the duplicate and monotonicity audit. |
 | `lib/auth.js` | GitHub OAuth, sessions, API-key authentication. |
 | `lib/github.js`, `lib/anthropic-api.js` | External integrations, all cached. |
 | `lib/codex-usage.js` | Codex rate limits from Codex's own rollout logs (`rate_limits` on every token_count event: 5-hour and weekly window per `limit_id`, credits, plan) — no network, no token. Incremental async reader: each file is read once in chunks, afterwards only appended bytes (a week of logs is ~250 MB). |

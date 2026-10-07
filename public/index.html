@@ -1804,12 +1804,16 @@ Unregister-ScheduledTask -TaskName ClaudeSyncAgent -Confirm:$false</code></pre>
     </div>
   </footer>
 
-  <div id="achievement-notification" class="achievement-notification hidden">
+  <div id="achievement-notification" class="achievement-notification hidden" role="status" aria-live="polite" aria-atomic="true">
     <div class="achievement-notification-header">
       <span class="achievement-notification-title" data-i18n="achievementUnlocked"></span>
-      <button class="achievement-notification-close" onclick="closeAchievementNotification()">&times;</button>
+      <button class="achievement-notification-close" type="button" onclick="closeAchievementNotification()" data-i18n-aria-label="closeNotification" aria-label="Schließen">&times;</button>
     </div>
     <div class="achievement-notification-list"></div>
+    <div class="achievement-notification-footer">
+      <span class="achievement-notification-more" hidden></span>
+      <button type="button" class="achievement-notification-view" onclick="viewAchievementNotifications()" data-i18n="viewAchievements">Achievements ansehen</button>
+    </div>
   </div>
 
   <script src="js/i18n.js"></script>

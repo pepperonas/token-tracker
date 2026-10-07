@@ -78,7 +78,7 @@ function countProject() {
   const server = rd('server.js');
   const db = rd('lib/db.js');
   const i18n = rd('public/js/i18n.js');
-  const ach = rd('lib/achievements.js');
+  const { ACHIEVEMENTS } = require('../lib/achievements');
   const pricing = rd('lib/pricing.js');
   const charts = rd('public/js/charts.js');
   const indexHtml = rd('public/index.html');
@@ -89,9 +89,9 @@ function countProject() {
     ...(server.match(/pathname\.startsWith\('\/api\/[a-z0-9/.-]+'/g) || [])
   ]);
 
-  const achLines = ach.split('\n').filter(l => /^\s*\{\s*key:\s*'/.test(l));
-  const categories = new Set(achLines.map(l => (l.match(/category: '([^']+)'/) || [])[1]).filter(Boolean));
-  const tiers = new Set(achLines.map(l => (l.match(/tier: '([^']+)'/) || [])[1]).filter(Boolean));
+  const activeAchievements = ACHIEVEMENTS.filter(a => !a.retired);
+  const categories = new Set(activeAchievements.map(a => a.category));
+  const tiers = new Set(activeAchievements.map(a => a.tier));
 
   // Version of a dependency as declared, with the range marker stripped: the
   // badge states what the project asks for, not what happens to be installed.
@@ -113,7 +113,7 @@ function countProject() {
       .replace('https://github.com/', ''),
     routes: routes.size,
     tables: (db.match(/CREATE TABLE IF NOT EXISTS/g) || []).length,
-    achievements: achLines.length,
+    achievements: activeAchievements.length,
     categories: categories.size,
     tiers: tiers.size,
     models: (pricing.match(/^\s{2}'claude-[a-z0-9.-]+': \{/gm) || []).length,

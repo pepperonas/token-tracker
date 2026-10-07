@@ -4678,14 +4678,48 @@ window.addEventListener('resize', () => {
 
 // --- Achievement Notifications ---
 let achievementNotificationTimer = null;
+const achievementNotificationItems = new Map();
+let achievementNotificationEventsBound = false;
+
+function scheduleAchievementNotificationClose() {
+  clearTimeout(achievementNotificationTimer);
+  achievementNotificationTimer = setTimeout(closeAchievementNotification, 8000);
+}
 
 function showAchievementNotification(achievements) {
+  if (!Array.isArray(achievements) || achievements.length === 0) return;
   const container = document.getElementById('achievement-notification');
   const list = container.querySelector('.achievement-notification-list');
   const title = container.querySelector('.achievement-notification-title');
+  const more = container.querySelector('.achievement-notification-more');
+  const wasHidden = container.classList.contains('hidden');
 
-  // Append new items (supports accumulation if already visible)
+  if (!achievementNotificationEventsBound) {
+    container.addEventListener('mouseenter', () => clearTimeout(achievementNotificationTimer));
+    container.addEventListener('mouseleave', () => {
+      if (!container.classList.contains('hidden')) scheduleAchievementNotificationClose();
+    });
+    container.addEventListener('focusin', () => clearTimeout(achievementNotificationTimer));
+    container.addEventListener('focusout', event => {
+      if (!container.contains(event.relatedTarget) && !container.classList.contains('hidden')) {
+        scheduleAchievementNotificationClose();
+      }
+    });
+    achievementNotificationEventsBound = true;
+  }
+
+  const previousCount = achievementNotificationItems.size;
   for (const ach of achievements) {
+    if (ach && ach.key && !achievementNotificationItems.has(ach.key)) {
+      achievementNotificationItems.set(ach.key, ach);
+    }
+  }
+  if (achievementNotificationItems.size === 0) return;
+  if (!wasHidden && achievementNotificationItems.size === previousCount) return;
+
+  // Keep the overlay short even when a sync unlocks many achievements at once.
+  list.replaceChildren();
+  for (const ach of [...achievementNotificationItems.values()].slice(0, 2)) {
     const item = document.createElement('div');
     item.className = `achievement-notification-item tier-${ach.tier}`;
     const icon = document.createElement('div');
@@ -4710,26 +4744,37 @@ function showAchievementNotification(achievements) {
     list.appendChild(item);
   }
 
-  title.textContent = t('achievementUnlocked');
+  const extra = achievementNotificationItems.size - 2;
+  more.textContent = extra > 0 ? `+${extra} ${t(extra === 1 ? 'achievementMoreOne' : 'achievementMore')}` : '';
+  more.hidden = extra <= 0;
+  title.textContent = t(achievementNotificationItems.size === 1 ? 'achievementUnlocked' : 'achievementsNewUnlocked')
+    .replace('{count}', achievementNotificationItems.size);
   container.classList.remove('hidden');
 
-  // Re-trigger slide-in animation
-  container.style.animation = 'none';
-  container.offsetHeight; // force reflow
-  container.style.animation = '';
-
-  // Auto-dismiss after 15s
-  clearTimeout(achievementNotificationTimer);
-  achievementNotificationTimer = setTimeout(() => closeAchievementNotification(), 15000);
+  // Animate only the first arrival; later live events update the same card.
+  if (wasHidden) {
+    container.classList.remove('achievement-notification-enter');
+    void container.offsetWidth;
+    container.classList.add('achievement-notification-enter');
+  }
+  if (!container.matches(':hover') && !container.contains(document.activeElement)) {
+    scheduleAchievementNotificationClose();
+  }
 }
 
 function closeAchievementNotification() {
   clearTimeout(achievementNotificationTimer);
+  achievementNotificationTimer = null;
+  achievementNotificationItems.clear();
   const container = document.getElementById('achievement-notification');
   container.classList.add('hidden');
-  // Remove all child nodes safely
-  const list = container.querySelector('.achievement-notification-list');
-  while (list.firstChild) list.removeChild(list.firstChild);
+  container.classList.remove('achievement-notification-enter');
+  container.querySelector('.achievement-notification-list').replaceChildren();
+}
+
+function viewAchievementNotifications() {
+  closeAchievementNotification();
+  switchTab('achievements');
 }
 
 // --- SSE Live Updates ---

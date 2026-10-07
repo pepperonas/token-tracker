@@ -243,3 +243,59 @@ describe('frontend helpers', () => {
     });
   });
 });
+
+function element() {
+  const classes = new Set();
+  return {
+    children: [],
+    textContent: '',
+    hidden: false,
+    classList: {
+      add: name => classes.add(name),
+      remove: name => classes.delete(name),
+      contains: name => classes.has(name)
+    },
+    addEventListener() {},
+    appendChild(child) { this.children.push(child); },
+    replaceChildren() { this.children = []; },
+    matches: () => false,
+    contains: () => false
+  };
+}
+
+describe('achievement notification', () => {
+  it('groups live unlocks into a small dismissible overlay', () => {
+    const F = loadFrontend();
+    const overlay = element();
+    const list = element();
+    const title = element();
+    const more = element();
+    overlay.classList.add('hidden');
+    overlay.querySelector = selector => ({
+      '.achievement-notification-list': list,
+      '.achievement-notification-title': title,
+      '.achievement-notification-more': more
+    })[selector];
+    F.document.getElementById = () => overlay;
+    F.document.createElement = () => element();
+
+    const ach = key => ({ key, tier: 'bronze', emoji: '🏆', points: 10 });
+    F.showAchievementNotification([ach('first_message'), ach('first_session'), ach('token_1000')]);
+    expect(overlay.classList.contains('hidden')).toBe(false);
+    expect(list.children).toHaveLength(2);
+    expect(more.textContent).toBe('+1 weiteres');
+    expect(title.textContent).toBe('3 Achievements freigeschaltet');
+
+    F.showAchievementNotification([ach('first_message'), ach('token_2000')]);
+    expect(list.children).toHaveLength(2);
+    expect(more.textContent).toBe('+2 weitere');
+    F.closeAchievementNotification();
+    expect(overlay.classList.contains('hidden')).toBe(true);
+    expect(list.children).toHaveLength(0);
+
+    F.showAchievementNotification([ach('first_message')]);
+    expect(title.textContent).toBe('Achievement freigeschaltet!');
+    expect(more.hidden).toBe(true);
+    F.closeAchievementNotification();
+  });
+});

@@ -64,7 +64,8 @@ describe('documentation stays in sync with the code', () => {
 
   it('keeps the stated achievement count true', () => {
     const { ACHIEVEMENTS } = require('../lib/achievements');
-    const n = ACHIEVEMENTS.length;
+    const total = ACHIEVEMENTS.length;
+    const active = ACHIEVEMENTS.filter(a => !a.retired).length;
     let totalClaims = 0;
     for (const doc of ['README.md', 'README_EN.md', 'README_DE.md', 'CLAUDE.md', 'docs/METRICS.md']) {
       const text = read(doc);
@@ -73,13 +74,15 @@ describe('documentation stays in sync with the code', () => {
       // hits prose about the past ("claimed 700 achievements when there were
       // 1200") and fails on the explanation rather than on a stale fact — the
       // same trap as text-searching code for a rule its comment quotes.
-      const claims = [
+      const activeClaims = [
         ...text.matchAll(/\*\*(\d[\d,.]*)\s+(?:achievements|Achievements)\*\*/g),
-        ...text.matchAll(/\b(\d[\d,.]*)\s+(?:achievement definitions|Achievement-Definitionen)\b/g),
         ...text.matchAll(/\b(?:All|all|Alle|returns all)\s+(\d[\d,.]*)\s+(?:achievements|Achievements)\b/g)
       ].map(m => Number(m[1].replace(/[,.]/g, '')));
-      totalClaims += claims.length;
-      for (const c of claims) expect(c).toBe(n);
+      const definitionClaims = [...text.matchAll(/\b(\d[\d,.]*)\s+(?:achievement definitions|Achievement-Definitionen)\b/g)]
+        .map(m => Number(m[1].replace(/[,.]/g, '')));
+      totalClaims += activeClaims.length + definitionClaims.length;
+      for (const c of activeClaims) expect(c).toBe(active);
+      for (const c of definitionClaims) expect(c).toBe(total);
     }
     // Guard against the check passing because it found nothing to check.
     expect(totalClaims).toBeGreaterThan(3);
