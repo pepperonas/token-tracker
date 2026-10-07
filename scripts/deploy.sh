@@ -6,10 +6,14 @@ APP_DIR="/root/apps/claude-token-tracker"
 
 echo "Deploying Token Tracker to tracker.celox.io..."
 
-# Sync files (exclude node_modules, data, .env, .git)
+# Sync code only. Preserve runtime data and backups even with --delete.
 rsync -avz --delete \
   --exclude node_modules \
   --exclude data \
+  --exclude /backups/ \
+  --exclude /temp/ \
+  --exclude /stdout.log \
+  --exclude /stderr.log \
   --exclude .env \
   --exclude .git \
   --exclude sync-agent/node_modules \
