@@ -208,6 +208,36 @@ Eight wave-1 achievements were corrected in 2026-08 from **impossible** to hard:
 figure is 0.204 %, and `model_haiku_majority` demanded Haiku above half of all
 messages against 2.9 % actual. An unreachable badge is padding, not a goal.
 
+> ⚠️ **Open inconsistency (found 2026-10-08, not yet fixed):** the achievement
+> stats compute daily working time by **summing each session's active minutes
+> under its start date**. Parallel sessions are counted twice and multi-day
+> sessions land on one day — the measured maximum is **6,714 minutes for a
+> single day** (a day has 1,440). Affects `maxDayActiveMin` and the `deepDays_*`
+> achievements, probably also the total working hours. Whether the overview's
+> active time is inflated as well is still to be checked. Treat time-based
+> achievement numbers as upper bounds until this is resolved.
+> Details and the fix brief: [FIXME.md](../FIXME.md).
+
+**Progress on a locked achievement** (since 0.10.0) is `value / target` of its
+condition, read back out of the definition: wave 3 declares
+`metric`/`threshold`/`requirements`, and for waves 1 and 2 the predicate's own
+source is parsed — but only the narrow form `metric >= number [&& …]`.
+Booleans, ratios built in the check (`a / b >= x`) and strict `>` get **no
+bar**, rather than a guessed one (measured: 1,169 of 1,224 active achievements
+have a target). With several conditions the bar shows the **weakest** one,
+since that is the distance that actually remains; the percentage is floored,
+so it never reads 100 while a condition is still short. A ratio achievement
+whose value is there but whose active-day gate is not yet met holds at 99 %
+and names the missing days. A test evaluates every achievement with a target
+against its real check on boundary and random stat vectors, so a bar can
+never claim "done" while the check says no.
+
+**"Almost there"** means at least 80 % of that weakest condition. **"New"**
+means the achievement's wave shipped within the last 30 days (wave 2:
+2026-08-30, wave 3: 2026-10-07; wave 1 has no date). 30 rather than 60 so the
+500-strong wave 2 stops counting as new and the wave that actually just
+arrived is not buried under it.
+
 ---
 
 ## Multi-Provider Tracking & Filtering

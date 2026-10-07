@@ -72,7 +72,7 @@ endpoint's allowlist.
 
 | Route | Description |
 |---|---|
-| `/api/achievements` | All 1,224 active achievements with unlock status, tier, points and unlock date. |
+| `/api/achievements` | All 1,224 active achievements with unlock status, tier, points and unlock date. Since 0.10.0 also `wave` (1/2/3), `addedAt` (the wave's ship date, `null` for wave 1) and, for **locked** achievements, `progress: {value, target, pct, metric, unit, parts, daysNeeded?}` — `null` when no target can be read from the condition (booleans, ratios), and for unlocked ones. With several conditions it describes the weakest; `pct` is floored; `unit` is one of `int`/`usd`/`pct`/`share`/`min`/`h`/`dec`. Computed from one `buildStats` per request (~90 ms at 360k messages). Additive — existing fields are unchanged. |
 | `POST /api/achievements/recompute` | Replays the history and rewrites unlock dates. **No UI** — the automatic paths (fresh install, `ACH_BACKFILL_FLAG` bump) cover every normal case; this is the maintainer's recovery path. |
 
 ## Pricing

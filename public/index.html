@@ -1140,6 +1140,15 @@
         <button class="ach-sort-btn" data-sort="recent" data-i18n="achievementsSortRecent">Zuletzt</button>
         <button class="ach-sort-btn" data-sort="points-desc" data-i18n="achievementsSortPoints">Punkte</button>
         <button class="ach-sort-btn" data-sort="tier" data-i18n="achievementsSortTier">Stufe</button>
+        <button class="ach-sort-btn" data-sort="next" data-i18n="achievementsSortNext">Nächste zuerst</button>
+      </div>
+      <div class="achievements-sort achievements-filter" role="group" aria-labelledby="ach-filter-label">
+        <span class="achievements-sort-label" id="ach-filter-label" data-i18n="achFilterLabel">Anzeigen:</span>
+        <button class="ach-filter-btn active" data-filter="all" aria-pressed="true"><span data-i18n="achFilterAll">Alle</span> <span class="ach-filter-count" id="ach-count-all"></span></button>
+        <button class="ach-filter-btn" data-filter="new" aria-pressed="false"><span data-i18n="achFilterNew">Neu</span> <span class="ach-filter-count" id="ach-count-new"></span></button>
+        <button class="ach-filter-btn" data-filter="near" aria-pressed="false"><span data-i18n="achFilterNear">Fast geschafft</span> <span class="ach-filter-count" id="ach-count-near"></span></button>
+        <button class="ach-filter-btn" data-filter="unlocked" aria-pressed="false"><span data-i18n="achFilterUnlocked">Freigeschaltet</span> <span class="ach-filter-count" id="ach-count-unlocked"></span></button>
+        <button class="ach-filter-btn" data-filter="locked" aria-pressed="false"><span data-i18n="achFilterLocked">Gesperrt</span> <span class="ach-filter-count" id="ach-count-locked"></span></button>
       </div>
       <div class="chart-grid full">
         <div class="chart-box">

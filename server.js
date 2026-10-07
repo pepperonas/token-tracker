@@ -1854,7 +1854,14 @@ const server = http.createServer((req, res) => {
         }
       } catch (e) { console.error('Achievements backfill migration failed:', e.message); }
     }
-    return sendJSON(res, achievements.getAchievementsResponse(userId, achievementsDb));
+    // Progress bars need the current stats. One buildStats per request, and a
+    // failure here must never cost the user the achievement list itself.
+    let achStats = null;
+    try {
+      const statsAgg = MULTI_USER ? aggregatorCache.get(user.id, null) : aggregator;
+      if (statsAgg && statsAgg.messageCount > 0) achStats = achievements.buildStats(statsAgg);
+    } catch (e) { console.error('Achievement progress stats failed:', e.message); }
+    return sendJSON(res, achievements.getAchievementsResponse(userId, achievementsDb, achStats));
   }
 
   // Database download — a snapshot of the requesting account's own data.

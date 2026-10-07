@@ -3022,7 +3022,191 @@ async function loadInsights() {
 }
 
 let _achievementsData = null;
-let _achievementSort = 'category';
+const ACH_SORTS = ['category', 'recent', 'points-desc', 'tier', 'next'];
+const ACH_FILTERS = ['all', 'new', 'near', 'unlocked', 'locked'];
+function _achStored(key, allowed, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return allowed.includes(v) ? v : fallback;
+  } catch (_e) { return fallback; }
+}
+let _achievementSort = _achStored('achSort', ACH_SORTS, 'category');
+let _achievementFilter = _achStored('achFilter', ACH_FILTERS, 'all');
+
+// "New" = the achievement's wave shipped within this many days. 30, not 60:
+// at 60 the 500-strong wave 2 (2026-08-30) would still count as new and bury
+// the wave that actually just arrived.
+const ACH_NEW_DAYS = 30;
+// "Almost there" = at least this share of the (weakest) condition reached.
+const ACH_NEAR_PCT = 80;
+
+function isNewAchievement(a, now = Date.now()) {
+  if (!a || !a.addedAt) return false;
+  const p = String(a.addedAt).split('-').map(Number);
+  const t = new Date(p[0], p[1] - 1, p[2]).getTime();
+  return Number.isFinite(t) && now >= t && now - t <= ACH_NEW_DAYS * 86400000;
+}
+
+function isNearAchievement(a) {
+  return !!a && !a.unlocked && !!a.progress && a.progress.pct >= ACH_NEAR_PCT;
+}
+
+function achievementMatchesFilter(a, filter, now = Date.now()) {
+  switch (filter) {
+    case 'new': return isNewAchievement(a, now);
+    case 'near': return isNearAchievement(a);
+    case 'unlocked': return !!a.unlocked;
+    case 'locked': return !a.unlocked;
+    default: return true;
+  }
+}
+
+function achievementFilterCounts(data, now = Date.now()) {
+  const counts = { all: 0, new: 0, near: 0, unlocked: 0, locked: 0 };
+  for (const a of data || []) {
+    for (const f of ACH_FILTERS) if (achievementMatchesFilter(a, f, now)) counts[f]++;
+  }
+  return counts;
+}
+
+// Closest first: locked with progress by percentage (then by how little is
+// missing in absolute terms), then locked without a measurable target, then
+// the unlocked ones, newest first.
+function sortAchievementsNextFirst(list) {
+  const rank = a => (a.unlocked ? 2 : a.progress ? 0 : 1);
+  return [...list].sort((a, b) => {
+    const r = rank(a) - rank(b);
+    if (r) return r;
+    if (rank(a) === 0) {
+      const d = b.progress.pct - a.progress.pct;
+      if (d) return d;
+      const ra = a.progress.value / a.progress.target;
+      const rb = b.progress.value / b.progress.target;
+      if (ra !== rb) return rb - ra;
+      return (a.points || 0) - (b.points || 0) || a.key.localeCompare(b.key);
+    }
+    if (rank(a) === 2) return (b.unlockedAt || '').localeCompare(a.unlockedAt || '');
+    return a.key.localeCompare(b.key);
+  });
+}
+
+const _ACH_METRIC_LABEL = {
+  totalTokens: ['Tokens', 'tokens'],
+  totalInputTokens: ['Input-Tokens', 'input tokens'],
+  totalOutputTokens: ['Output-Tokens', 'output tokens'],
+  totalCacheReadTokens: ['Cache-Read-Tokens', 'cache-read tokens'],
+  totalCacheCreateTokens: ['Cache-Write-Tokens', 'cache-write tokens'],
+  totalSessions: ['Sitzungen', 'sessions'],
+  totalMessages: ['Nachrichten', 'messages'],
+  totalCost: ['Kosten', 'cost'],
+  totalLinesWritten: ['geschriebene Zeilen', 'lines written'],
+  totalLinesAdded: ['hinzugefügte Zeilen', 'lines added'],
+  totalLinesRemoved: ['gelöschte Zeilen', 'lines removed'],
+  netLines: ['Netto-Zeilen', 'net lines'],
+  totalToolCalls: ['Tool-Aufrufe', 'tool calls'],
+  toolCount: ['Tools', 'tools'],
+  modelCount: ['Modelle', 'models'],
+  projectCount: ['Projekte', 'projects'],
+  activeDays: ['aktive Tage', 'active days'],
+  longestStreak: ['Tage in Folge', 'day streak'],
+  monthsActive: ['aktive Monate', 'active months'],
+  uniqueWeeksActive: ['aktive Wochen', 'active weeks'],
+  totalActiveHours: ['Arbeitszeit', 'working time'],
+  avgCacheRate: ['Cache-Rate', 'cache rate'],
+  mcpToolCalls: ['MCP-Aufrufe', 'MCP calls'],
+  mcpServerCount: ['MCP-Server', 'MCP servers'],
+  subagentMessages: ['Sub-Agent-Nachrichten', 'sub-agent messages'],
+  totalRateLimitHits: ['Rate-Limit-Treffer', 'rate-limit hits'],
+  cacheSavingsUsd: ['Cache-Ersparnis', 'cache savings'],
+  weeksAtLeast4Days: ['Vier-Tage-Wochen', 'four-day weeks'],
+  weeksAtLeast5Days: ['Fünf-Tage-Wochen', 'five-day weeks'],
+  codeToolDayCount: ['Code-und-Tool-Tage', 'code-and-tool days'],
+  projectsAtLeast90Days: ['Projekte über 90 Tage', 'projects over 90 days'],
+  projectsAtLeast180Days: ['Projekte über 180 Tage', 'projects over 180 days'],
+  projectsAtLeast365Days: ['Projekte über 365 Tage', 'projects over 365 days'],
+  maxProjectAgeDays: ['Tage', 'days'],
+  longestFourDayWeekRun: ['Wochen in Folge', 'weeks in a row'],
+  monthsAtLeast15Days: ['Monate', 'months'],
+  monthsAtLeast20Days: ['Monate', 'months'],
+  codeToolWeeks: ['Wochen', 'weeks'],
+  deepMultiModelSessions: ['Sitzungen', 'sessions'],
+  maxDayLines: ['Zeilen an einem Tag', 'lines in one day'],
+  maxDayTokens: ['Tokens an einem Tag', 'tokens in one day'],
+  maxSessionsInDay: ['Sitzungen an einem Tag', 'sessions in one day'],
+  peakDayMessages: ['Nachrichten an einem Tag', 'messages in one day'],
+  deepSessions_2h: ['Sitzungen', 'sessions'],
+  deepSessions_4h: ['Sitzungen', 'sessions'],
+  deepSessions_8h: ['Sitzungen', 'sessions'],
+  deepDays_4h: ['Tage', 'days'],
+  deepDays_6h: ['Tage', 'days'],
+  deepDays_8h: ['Tage', 'days'],
+  daysWith8Hours: ['Tage', 'days'],
+  sessionsAbove100Msgs: ['Sitzungen', 'sessions'],
+  sessionsAbove500Msgs: ['Sitzungen', 'sessions'],
+  marathonSessions: ['Sitzungen', 'sessions'],
+  multiModelSessions: ['Sitzungen', 'sessions'],
+  consecutiveMonthsActive: ['Monate in Folge', 'months in a row'],
+  longestWeekdayStreak: ['Werktage in Folge', 'weekdays in a row']
+};
+
+function achievementMetricLabel(metric, lang = currentLang) {
+  const de = lang === 'de';
+  const m = String(metric || '');
+  let hit = /^toolCallsByName\.(.+)$/.exec(m);
+  if (hit) return de ? hit[1] + '-Aufrufe' : hit[1] + ' calls';
+  hit = /^modelMessagesOf\((.+)\)$/.exec(m);
+  if (hit) return de ? hit[1].replace(/ /g, '-') + '-Nachrichten' : hit[1] + ' messages';
+  hit = /^modelMessages\.(.+)$/.exec(m);
+  if (hit) {
+    const name = hit[1].charAt(0).toUpperCase() + hit[1].slice(1);
+    return de ? name + '-Nachrichten' : name + ' messages';
+  }
+  const label = _ACH_METRIC_LABEL[m];
+  return label ? label[de ? 0 : 1] : '';
+}
+
+function formatAchValue(v, unit, lang = currentLang) {
+  const de = lang === 'de';
+  const loc = de ? 'de-DE' : 'en-US';
+  const n = Number(v) || 0;
+  const num = (x, digits) => x.toLocaleString(loc, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  switch (unit) {
+    case 'usd': return '$' + num(n, Math.abs(n) >= 100 ? 0 : 2);
+    case 'pct': return num(n, 1) + (de ? ' %' : '%');
+    case 'share': return num(n * 100, 1) + (de ? ' %' : '%');
+    case 'min': return num(Math.floor(n), 0) + (de ? ' Min.' : ' min');
+    case 'h': return num(Math.floor(n), 0) + (de ? ' Std.' : ' h');
+    case 'dec': return num(n, Math.abs(n) >= 100 ? 0 : 1);
+    default: return num(Math.floor(n), 0);
+  }
+}
+
+// "12.430 / 15.000 Read-Aufrufe". A count carries its label after the
+// numbers; a value that already has a unit gets the label in front.
+function formatAchProgress(p, lang = currentLang) {
+  if (!p) return '';
+  const value = formatAchValue(p.value, p.unit, lang);
+  const target = formatAchValue(p.target, p.unit, lang);
+  const label = achievementMetricLabel(p.metric, lang);
+  let text;
+  if (!p.unit || p.unit === 'int') text = value + ' / ' + target + (label ? ' ' + label : '');
+  else text = (label ? label + ': ' : '') + value + ' / ' + target;
+  if (p.parts > 1) text += ' · ' + t('achProgressWeakest').replace('{n}', p.parts);
+  return text;
+}
+
+function _achFilterUi(data) {
+  const counts = achievementFilterCounts(data);
+  for (const f of ACH_FILTERS) {
+    const el = document.getElementById('ach-count-' + f);
+    if (el) el.textContent = String(counts[f]);
+  }
+  document.querySelectorAll('.ach-filter-btn').forEach(btn => {
+    const on = btn.dataset.filter === _achievementFilter;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
 
 function formatAchDate(isoStr) {
   if (!isoStr) return '';
@@ -3150,14 +3334,24 @@ async function loadAchievements() {
     btn.classList.toggle('active', btn.dataset.sort === _achievementSort);
   });
 
+  _achFilterUi(data);
   renderAchievementsGrid(data, _achievementSort);
 }
 
 const TIER_ORDER = { diamond: 0, platinum: 1, gold: 2, silver: 3, bronze: 4 };
 
-function renderAchievementsGrid(data, sortMode) {
+function renderAchievementsGrid(allData, sortMode) {
   const grid = document.getElementById('achievements-grid');
   grid.textContent = '';
+  const now = Date.now();
+  const data = (allData || []).filter(a => achievementMatchesFilter(a, _achievementFilter, now));
+  if (!data.length) {
+    const empty = document.createElement('p');
+    empty.className = 'achievements-empty';
+    empty.textContent = t('achFilterEmpty');
+    grid.appendChild(empty);
+    return;
+  }
 
   const tierFallback = {
     bronze: '\u{1F7E4}', silver: '\u26AA', gold: '\u{1F7E1}',
@@ -3189,6 +3383,8 @@ function renderAchievementsGrid(data, sortMode) {
       return (b.points || 0) - (a.points || 0);
     });
     groups = [{ label: '', items: sorted }];
+  } else if (sortMode === 'next') {
+    groups = [{ label: '', items: sortAchievementsNextFirst(data) }];
   } else if (sortMode === 'tier') {
     // Group by tier (diamond first)
     const tierMap = {};
@@ -3219,7 +3415,8 @@ function renderAchievementsGrid(data, sortMode) {
 
     for (const ach of group.items) {
       const card = document.createElement('div');
-      card.className = 'achievement-card' + (ach.unlocked ? ' unlocked' : ' locked') + ' tier-' + ach.tier;
+      card.className = 'achievement-card' + (ach.unlocked ? ' unlocked' : ' locked') + ' tier-' + ach.tier +
+        (isNearAchievement(ach) ? ' near' : '');
 
       const icon = document.createElement('div');
       icon.className = 'achievement-icon';
@@ -3236,8 +3433,48 @@ function renderAchievementsGrid(data, sortMode) {
       desc.className = 'achievement-desc';
       desc.textContent = t('ach_' + ach.key + '_desc') || '';
 
+      if (isNewAchievement(ach, now)) {
+        const pill = document.createElement('span');
+        pill.className = 'achievement-new-pill';
+        pill.textContent = t('achNewPill');
+        name.appendChild(document.createTextNode(' '));
+        name.appendChild(pill);
+      }
+
       info.appendChild(name);
       info.appendChild(desc);
+
+      if (!ach.unlocked && ach.progress) {
+        const prog = document.createElement('div');
+        prog.className = 'achievement-progress';
+        const bar = document.createElement('div');
+        bar.className = 'achievement-progress-bar';
+        bar.setAttribute('role', 'progressbar');
+        bar.setAttribute('aria-valuemin', '0');
+        bar.setAttribute('aria-valuemax', '100');
+        bar.setAttribute('aria-valuenow', String(ach.progress.pct));
+        bar.setAttribute('aria-label', t('achProgressAria').replace('{pct}', ach.progress.pct));
+        const fill = document.createElement('div');
+        fill.className = 'achievement-progress-fill';
+        fill.style.width = ach.progress.pct + '%';
+        bar.appendChild(fill);
+        const text = document.createElement('div');
+        text.className = 'achievement-progress-text';
+        const pct = document.createElement('span');
+        pct.className = 'achievement-progress-pct';
+        pct.textContent = ach.progress.pct + (currentLang === 'de' ? ' %' : '%');
+        text.appendChild(document.createTextNode(formatAchProgress(ach.progress) + ' '));
+        text.appendChild(pct);
+        prog.appendChild(bar);
+        prog.appendChild(text);
+        if (ach.progress.daysNeeded) {
+          const gate = document.createElement('div');
+          gate.className = 'achievement-progress-gate';
+          gate.textContent = t('achProgressDaysNeeded').replace('{n}', ach.progress.daysNeeded);
+          prog.appendChild(gate);
+        }
+        info.appendChild(prog);
+      }
       card.appendChild(icon);
       card.appendChild(info);
 
@@ -4957,8 +5194,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.ach-sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       _achievementSort = btn.dataset.sort;
+      try { localStorage.setItem('achSort', _achievementSort); } catch (_e) { /* private mode */ }
       document.querySelectorAll('.ach-sort-btn').forEach(b => b.classList.toggle('active', b === btn));
       if (_achievementsData) renderAchievementsGrid(_achievementsData, _achievementSort);
+    });
+  });
+  document.querySelectorAll('.ach-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _achievementFilter = btn.dataset.filter;
+      try { localStorage.setItem('achFilter', _achievementFilter); } catch (_e) { /* private mode */ }
+      if (_achievementsData) {
+        _achFilterUi(_achievementsData);
+        renderAchievementsGrid(_achievementsData, _achievementSort);
+      }
     });
   });
 

@@ -595,7 +595,7 @@ describe('achievement catalogue (1274 definitions)', () => {
     // durationMin is last-minus-first message including idle; on real data it
     // ran 36x higher than actual work. Wave 2 must not inherit that.
     const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'achievements.js'), 'utf8');
-    const arrayEnd = src.indexOf('\n].map(', src.indexOf('Wave 2 — 500 achievements'));
+    const arrayEnd = src.indexOf('\n];\n', src.indexOf('Wave 2 — 500 achievements'));
     const waveTwo = src.slice(src.indexOf('Wave 2 — 500 achievements'), arrayEnd);
     // Strip comments first: the block explains WHY durationMin is avoided, so a
     // raw text search matches the explanation and passes/fails on prose.

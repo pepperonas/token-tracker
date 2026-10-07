@@ -5,12 +5,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.9.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.9.0">
-  <img src="https://img.shields.io/badge/lines_of_code-48.8k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="48798 lines of code across 93 files">
+  <img src="https://img.shields.io/badge/version-v0.10.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.10.0">
+  <img src="https://img.shields.io/badge/lines_of_code-49.8k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="49793 lines of code across 96 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-783_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="783 tests passing">
+  <img src="https://img.shields.io/badge/tests-819_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="819 tests passing">
   <img src="https://img.shields.io/badge/achievements-1224-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1224 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -36,17 +36,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/API_routes-71-0969da?style=flat-square" alt="71 API routes">
   <img src="https://img.shields.io/badge/DB_tables-13-0969da?style=flat-square" alt="13 database tables">
-  <img src="https://img.shields.io/badge/lib_modules-27-0969da?style=flat-square" alt="27 library modules">
+  <img src="https://img.shields.io/badge/lib_modules-28-0969da?style=flat-square" alt="28 library modules">
   <img src="https://img.shields.io/badge/charts-45-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="45 chart types">
   <img src="https://img.shields.io/badge/doc_pages-8-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="8 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-46-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="46 test files">
+  <img src="https://img.shields.io/badge/test_files-48-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="48 test files">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-6296_x_2-bf8700?style=flat-square" alt="6296 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-6320_x_2-bf8700?style=flat-square" alt="6320 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 
@@ -208,7 +208,7 @@ Dashboard zur Analyse deiner Token-Nutzung für KI-Coding-Assistenten (Claude Co
 - **Perioden-Vergleich** — immer sichtbare Pill-Leiste (Aus / Vorperiode / Letzte 7T / 30T / 90T / Eigener) vergleicht zwei Zeiträume sofort nebeneinander mit 8 Metriken (Tokens/Min, Zeilen/Stunde, Kosten/Zeile, Tokens/Zeile, Zeilen/Nachricht, Tools/Nachricht, I/O-Verhältnis, Coding-Stunden), Delta-Prozenten und farbcodierten Verbesserungs-/Verschlechterungsanzeigen — ein Klick genügt, kein separater Toggle nötig
 - **HTML-Export** — mobil-optimierter interaktiver Snapshot mit Chart.js, 8 Tabs (Übersicht, Charts, Sitzungen, Projekte, Modelle, Tools, Produktivität, Achievements), 12+ Charts und sortierbaren Tabellen. Optimiert für Smartphones (412px+) mit adaptiven Layouts, Touch-freundlichen Tabs und responsiven Chart-Darstellungen
 - **Globaler Vergleich** — eigene Statistiken gegen den Durchschnitt aller Nutzer vergleichen (Multi-User-Modus)
-- **783 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
+- **819 automatisierte Tests** (Unit + Integration + Multi-User API + Achievements)
 - **Projekt-Report (HTML + PDF)** — eigenständiger, druckoptimierter Report je Projekt: Kennzahlen, Kosten nach Komponente inklusive beider Cache-Schreibstufen, Kostenverlauf, Modell- und Sitzungstabellen sowie ein Abschnitt zum Rechenweg. Ohne CDN und ohne Chart-Bibliothek — Diagramme sind Inline-SVG. „PDF" läuft über den Druckdialog des Browsers
 - **„Wie wird gerechnet?"** — ein Rechenweg-Dialog hinter jeder Kennzahl: Formeln, der 5-Minuten-Deckel, die Preisquelle und was bewusst nicht erfasst wird
 - **Exakte Cache-Preise** — Cache-Schreibvorgänge werden nach Laufzeit abgerechnet (5 Min = 1,25× Eingabe, 1 Std = 2×). Claude Code schreibt überwiegend in den 1-Stunden-Cache; ein Pauschalsatz beziffert die Kosten rund 8,5 % zu niedrig

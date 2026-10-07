@@ -11,12 +11,12 @@
 <!-- BADGES:START -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.9.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.9.0">
-  <img src="https://img.shields.io/badge/lines_of_code-48.8k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="48798 lines of code across 93 files">
+  <img src="https://img.shields.io/badge/version-v0.10.0-ff6b00?style=for-the-badge&logo=semanticrelease&logoColor=white" alt="Version 0.10.0">
+  <img src="https://img.shields.io/badge/lines_of_code-49.8k-58a6ff?style=for-the-badge&logo=javascript&logoColor=white" alt="49793 lines of code across 96 files">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-783_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="783 tests passing">
+  <img src="https://img.shields.io/badge/tests-819_passing-3fb950?style=for-the-badge&logo=vitest&logoColor=white" alt="819 tests passing">
   <img src="https://img.shields.io/badge/achievements-1224-8957e5?style=for-the-badge&logo=trophy&logoColor=white" alt="1224 achievements">
   <img src="https://img.shields.io/badge/build_step-none-1a7f37?style=for-the-badge&logo=esbuild&logoColor=white" alt="no build step">
 </p>
@@ -42,17 +42,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/API_routes-71-0969da?style=flat-square" alt="71 API routes">
   <img src="https://img.shields.io/badge/DB_tables-13-0969da?style=flat-square" alt="13 database tables">
-  <img src="https://img.shields.io/badge/lib_modules-27-0969da?style=flat-square" alt="27 library modules">
+  <img src="https://img.shields.io/badge/lib_modules-28-0969da?style=flat-square" alt="28 library modules">
   <img src="https://img.shields.io/badge/charts-45-FF6384?style=flat-square&logo=chartdotjs&logoColor=white" alt="45 chart types">
   <img src="https://img.shields.io/badge/doc_pages-8-6f42c1?style=flat-square&logo=readthedocs&logoColor=white" alt="8 documentation pages">
-  <img src="https://img.shields.io/badge/test_files-46-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="46 test files">
+  <img src="https://img.shields.io/badge/test_files-48-3fb950?style=flat-square&logo=vitest&logoColor=white" alt="48 test files">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/achievement_categories-14-8957e5?style=flat-square" alt="14 achievement categories">
   <img src="https://img.shields.io/badge/tiers-5_bronze_to_diamond-8957e5?style=flat-square" alt="5 tiers">
   <img src="https://img.shields.io/badge/models_priced-19-D4A574?style=flat-square&logo=anthropic&logoColor=white" alt="19 models in the fallback price table">
-  <img src="https://img.shields.io/badge/i18n_keys-6296_x_2-bf8700?style=flat-square" alt="6296 translation keys in 2 languages">
+  <img src="https://img.shields.io/badge/i18n_keys-6320_x_2-bf8700?style=flat-square" alt="6320 translation keys in 2 languages">
   <img src="https://img.shields.io/badge/languages-DE_%7C_EN-bf8700?style=flat-square" alt="German and English">
 </p>
 
@@ -158,7 +158,7 @@ Open [http://localhost:5010](http://localhost:5010)
 - **"How it adds up"** — every KPI carries a one-line explanation and opens a methodology dialog covering the formulas, the 5-minute idle cap, where prices come from, and what is deliberately *not* counted (web search, fast mode, US-only inference, the Batch discount, Bash-driven edits)
 - **Accurate cache pricing** — cache writes are billed by TTL tier: 5 minutes at 1.25x input, **1 hour at 2x**. Claude Code writes overwhelmingly to the 1-hour cache, so a flat rate understates cost by ~8.5%
 - **Database download** — download the full SQLite database from Settings for local backup or analysis
-- **783 automated tests** — unit, integration, and multi-user API tests
+- **819 automated tests** — unit, integration, and multi-user API tests
 - **Zero-framework frontend** — vanilla JS, 2 runtime dependencies, no build step
 
 ## Screenshots

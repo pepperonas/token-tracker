@@ -4,6 +4,32 @@ Alle nennenswerten Änderungen an diesem Projekt. Format lose nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/); Versionierung nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.10.0] — 2026-10-08
+
+### Added
+
+- **Fortschritt je gesperrtem Achievement.** Ein schmaler Balken mit Klartext,
+  etwa „12.430 / 15.000 Read-Aufrufe · 83 %“. Gilt für 1169 der 1224 aktiven
+  Achievements; Ja/Nein-Bedingungen und Verhältnisse bekommen bewusst keinen
+  Balken statt eines geratenen. Bei Kombinationen zählt die schwächste
+  Bedingung. Ein Verhältnis, dem nur noch Aktivtage fehlen, bleibt bei 99 % und
+  nennt die fehlenden Tage. Ein Test prüft jedes Achievement mit Ziel gegen
+  seine echte Bedingung, damit kein Balken „fertig“ zeigt, solange die Prüfung
+  nein sagt.
+- **Filter** Alle · Neu · Fast geschafft (ab 80 %) · Freigeschaltet · Gesperrt,
+  je mit Anzahl, und die Sortierung **„Nächste zuerst“**. Beide Wahlen bleiben
+  über einen Reload erhalten.
+- **Neu-Pille** auf Achievements aus Wellen der letzten 30 Tage (derzeit die 74
+  aus Welle 3).
+- API: `/api/achievements` liefert zusätzlich `wave`, `addedAt` und
+  `progress`; die bestehenden Felder sind unverändert.
+
+### Changed
+
+- Gesperrte Karten werden nicht mehr als Ganzes auf 40 % Deckkraft gedimmt. Das
+  drückte den Text unter lesbaren Kontrast. Stattdessen wird das Symbol grau
+  und der Titel gedämpft.
+
 ## [0.9.0] — 2026-10-07
 
 ### Added

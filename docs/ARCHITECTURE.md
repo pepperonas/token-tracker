@@ -58,6 +58,7 @@ issues the session cookie; each machine gets its own device API key.
 | `lib/pricing.js` | Price resolution: epoch → recorded price history (by message time) → LiteLLM override → built-in fallback → default. Cost calculation including both cache-write tiers. |
 | `lib/pricing-fetcher.js` | Daily LiteLLM refresh, cached in the DB so the first calculation after a restart is already fresh; records every price change in the price history so past costs stay fixed. |
 | `lib/achievements.js` | 1,274 definitions (1,224 active), the stats they read, and the historical backfill. |
+| `lib/achievement-progress.js` | Progress towards a locked achievement: reads the target back out of the condition (declared fields for wave 3, a narrow parser for `metric >= n [&& …]` otherwise), resolves values by walking the stats object (no eval). |
 | `lib/achievement-tier-corrections.js` | Tier corrections for active achievements after the duplicate and monotonicity audit. |
 | `lib/auth.js` | GitHub OAuth, sessions, API-key authentication. |
 | `lib/github.js`, `lib/anthropic-api.js` | External integrations, all cached. |

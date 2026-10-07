@@ -1555,11 +1555,28 @@ const DEMO_DATA = (() => {
     'tool_diversity_5', 'tool_diversity_10',
     'project_1', 'w3_four_week_1', 'w3_project_age_1'
   ]);
-  const achievementsData = achDefs.map(([key, category, tier, emoji]) => ({
-    key, category, tier, emoji,
-    unlocked: unlockedKeys.has(key),
-    unlockedAt: unlockedKeys.has(key) ? days[Math.floor(Math.random() * days.length)] + 'T12:00:00Z' : null
-  }));
+  // Wave 3 counts as "new" in the demo: dated a week before today, so the
+  // filter and the pill have something to show whenever the demo is opened.
+  const _w3Added = new Date(Date.now() - 7 * 86400000);
+  const w3AddedAt = _w3Added.getFullYear() + '-' + String(_w3Added.getMonth() + 1).padStart(2, '0') +
+    '-' + String(_w3Added.getDate()).padStart(2, '0');
+  const _achHash = key => { let h = 7; for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+  const achievementsData = achDefs.map(([key, category, tier, emoji]) => {
+    const unlocked = unlockedKeys.has(key);
+    const h = _achHash(key);
+    // Deterministic, unit-less sample progress: every 10th locked one has
+    // none (like the boolean achievements in the real catalogue).
+    const target = 1000 * (h % 9 + 1);
+    const pct = h % 97;
+    const progress = (unlocked || h % 10 === 0) ? null
+      : { value: Math.floor(target * pct / 100), target, pct, metric: '', unit: 'int', parts: 1 };
+    const wave = key.startsWith('w3_') ? 3 : 1;
+    return {
+      key, category, tier, emoji, unlocked,
+      unlockedAt: unlocked ? days[Math.floor(Math.random() * days.length)] + 'T12:00:00Z' : null,
+      wave, addedAt: wave === 3 ? w3AddedAt : null, progress
+    };
+  });
 
   // --- Tool stats (enhanced for Tools tab) ---
   // Built-in tools + a few MCP tools with realistic cost/token attribution
