@@ -7,7 +7,9 @@ const {
   decodeProtobuf,
   extractAntigravityProjectName,
   loadAntigravityWorkspaces,
-  parseAntigravityConversationFile
+  parseAntigravityConversationFile,
+  findAntigravityConversationFiles,
+  parseAllAntigravity
 } = require('../lib/antigravity-parser');
 
 describe('antigravity-parser', () => {
@@ -106,6 +108,40 @@ describe('antigravity-parser', () => {
       expect(m.cacheReadTokens).toBe(3000);
       expect(m.outputTokens).toBe(200);
       expect(m.provider).toBe('antigravity');
+    });
+  });
+
+  describe('parseAllAntigravity across provider dirs', () => {
+    const writeConv = (conversationsDir, convId, project) => {
+      fs.mkdirSync(conversationsDir, { recursive: true });
+      const db = new Database(path.join(conversationsDir, `${convId}.db`));
+      db.exec(`
+        CREATE TABLE gen_metadata (idx INTEGER PRIMARY KEY, data BLOB);
+        CREATE TABLE steps (idx INTEGER PRIMARY KEY, metadata BLOB);
+      `);
+      const f4Buf = Buffer.from([0x08, 0xdc, 0x0b, 0x10, 0xb8, 0x17, 0x18, 0xc8, 0x01]);
+      const f1Buf = Buffer.concat([Buffer.from([0x22, f4Buf.length]), f4Buf]);
+      const genBuf = Buffer.concat([Buffer.from([0x0a, f1Buf.length]), f1Buf]);
+      db.prepare('INSERT INTO gen_metadata (idx, data) VALUES (?, ?)').run(0, genBuf);
+      db.close();
+
+      const summaries = new Database(path.join(path.dirname(conversationsDir), 'conversation_summaries.db'));
+      summaries.exec('CREATE TABLE conversation_summaries (conversation_id TEXT, workspace_uris TEXT, last_modified_time TEXT)');
+      summaries.prepare('INSERT INTO conversation_summaries VALUES (?, ?, ?)')
+        .run(convId, 'file://' + path.join(os.homedir(), project), '2026-10-22T10:00:00Z');
+      summaries.close();
+    };
+
+    it('reads both the CLI and the app dir, each with its own summaries db', () => {
+      const cliDir = path.join(tmpDir, 'antigravity-cli', 'conversations');
+      const appDir = path.join(tmpDir, 'antigravity', 'conversations');
+      writeConv(cliDir, 'cli-conv', 'proj-cli');
+      writeConv(appDir, 'app-conv', 'proj-app');
+
+      expect(findAntigravityConversationFiles([cliDir, appDir])).toHaveLength(2);
+
+      const { messages } = parseAllAntigravity({}, [cliDir, appDir]);
+      expect(messages.map(m => m.project).sort()).toEqual(['proj-app', 'proj-cli']);
     });
   });
 });
